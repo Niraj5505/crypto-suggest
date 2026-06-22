@@ -3,59 +3,69 @@ import RatingDisplay from './RatingDisplay';
 import ReviewsList from './ReviewsList';
 import ReviewForm from './ReviewForm';
 import WriteReviewButton from './WriteReviewButton';
-import { getReviewsByWebsite, calculateAverageRating } from '../../data/mockReviews';
+import { getReviews, submitReview, deleteReview } from '../../services/api';
 
 const WebsiteReviews = ({ websiteId }) => {
     const [reviews, setReviews] = useState([]);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [averageRating, setAverageRating] = useState(0);
 
-    // Load reviews from localStorage and mock data
-    useEffect(() => {
-        // Get mock reviews
-        const mockReviews = getReviewsByWebsite(websiteId);
+    // Load reviews from backend
+    const fetchReviews = async () => {
+        try {
+            const data = await getReviews(websiteId);
+            setReviews(data);
 
-        // Get user reviews from localStorage
-        const userReviewsStr = localStorage.getItem('userReviews');
-        const userReviews = userReviewsStr ? JSON.parse(userReviewsStr) : [];
-
-        // Filter user reviews for this website
-        const websiteUserReviews = userReviews.filter(r => r.websiteId === websiteId);
-
-        // Combine and sort by timestamp
-        const allReviews = [...mockReviews, ...websiteUserReviews].sort(
-            (a, b) => b.timestamp - a.timestamp
-        );
-
-        setReviews(allReviews);
-
-        // Calculate average rating
-        if (allReviews.length > 0) {
-            const sum = allReviews.reduce((acc, review) => acc + review.rating, 0);
-            setAverageRating(Math.round(sum / allReviews.length));
+            // Calculate average rating
+            if (data.length > 0) {
+                const sum = data.reduce((acc, review) => acc + review.rating, 0);
+                setAverageRating(Math.round(sum / data.length));
+            } else {
+                setAverageRating(0);
+            }
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
         }
+    };
+
+    useEffect(() => {
+        fetchReviews();
     }, [websiteId]);
 
-    const handleSubmitReview = (newReview) => {
-        // Add to localStorage
-        const userReviewsStr = localStorage.getItem('userReviews');
-        const userReviews = userReviewsStr ? JSON.parse(userReviewsStr) : [];
-        userReviews.push(newReview);
-        localStorage.setItem('userReviews', JSON.stringify(userReviews));
+    const handleSubmitReview = async (reviewDetails) => {
+        try {
+            await submitReview(websiteId, {
+                walletAddress: reviewDetails.walletAddress,
+                rating: reviewDetails.rating,
+                text: reviewDetails.text,
+                title: reviewDetails.title,
+                screenshotUrl: reviewDetails.screenshotUrl
+            });
 
-        // Update state
-        setReviews([newReview, ...reviews]);
+            // Reload reviews from backend
+            await fetchReviews();
 
-        // Recalculate average
-        const allReviews = [newReview, ...reviews];
-        const sum = allReviews.reduce((acc, review) => acc + review.rating, 0);
-        setAverageRating(Math.round(sum / allReviews.length));
+            // Close form and show success
+            setShowReviewForm(false);
+            alert('✅ Review submitted successfully!');
+        } catch (error) {
+            console.error('Error submitting review:', error);
+            alert(`❌ Failed to submit review: ${error.message}`);
+        }
+    };
 
-        // Close form and show success
-        setShowReviewForm(false);
-
-        // Show success message (you can add a toast notification here)
-        alert('✅ Review submitted successfully!');
+    const handleDeleteReview = async (id) => {
+        if (window.confirm("Are you sure you want to delete your review?")) {
+            try {
+                await deleteReview(id);
+                // Reload reviews from backend
+                await fetchReviews();
+                alert('✅ Review deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                alert(`❌ Failed to delete review: ${error.message}`);
+            }
+        }
     };
 
     return (
@@ -83,7 +93,7 @@ const WebsiteReviews = ({ websiteId }) => {
 
                         {/* Reviews List */}
                         <div className="lg:col-span-2">
-                            <ReviewsList reviews={reviews} />
+                            <ReviewsList reviews={reviews} onDelete={handleDeleteReview} />
                         </div>
                     </div>
                 </div>
@@ -95,6 +105,7 @@ const WebsiteReviews = ({ websiteId }) => {
                     websiteId={websiteId}
                     onClose={() => setShowReviewForm(false)}
                     onSubmit={handleSubmitReview}
+                    reviews={reviews}
                 />
             )}
         </div>

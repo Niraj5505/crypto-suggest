@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Grid, List, Search, Filter, ArrowRight } from 'lucide-react';
+import { Grid, List, Search, Filter } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import Breadcrumb from '../components/common/Breadcrumb';
 import WebsiteGrid from '../components/website/WebsiteGrid';
-import { mockWebsites } from '../data/mockData';
+import { getWebsites } from '../services/api';
 
 const Browse = () => {
     const { category } = useParams();
@@ -14,43 +14,53 @@ const Browse = () => {
     const [viewMode, setViewMode] = useState('grid');
     const [sortBy, setSortBy] = useState('popular');
     const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [verifiedOnly, setVerifiedOnly] = useState(true);
+    const [websites, setWebsites] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const itemsPerPage = 6;
 
     // Update state when URL params change (e.g. back button)
     useEffect(() => {
         setSearchQuery(searchParams.get('search') || '');
     }, [searchParams]);
 
+    // Reset page when search or filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [category, searchQuery, sortBy, verifiedOnly]);
+
+    useEffect(() => {
+        const fetchWebsites = async () => {
+            setLoading(true);
+            try {
+                const data = await getWebsites({
+                    category,
+                    search: searchQuery,
+                    sortBy,
+                    verifiedOnly: verifiedOnly ? 'true' : 'false'
+                });
+                setWebsites(data);
+            } catch (error) {
+                console.error('Error fetching websites:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchWebsites();
+    }, [category, searchQuery, sortBy, verifiedOnly]);
+
     const breadcrumbItems = [
         { label: 'Home', href: '/' },
         { label: category ? `${category} Websites` : 'Browse Websites' }
     ];
 
-    const filteredWebsites = mockWebsites
-        .filter(site => {
-            const query = searchQuery.toLowerCase();
-            const matchesSearch = (
-                site.name.toLowerCase().includes(query) ||
-                site.shortDescription.toLowerCase().includes(query) ||
-                site.category.toLowerCase().includes(query)
-            );
-
-            // Loose matching for category to handle "DeFi" vs "defi" vs "Decentralized Finance"
-            let matchesCategory = true;
-            if (category) {
-                const catSlug = category.toLowerCase();
-                const siteCat = site.category.toLowerCase();
-                matchesCategory = siteCat.includes(catSlug) || catSlug.includes(siteCat);
-            }
-
-            return matchesSearch && matchesCategory;
-        })
-        .sort((a, b) => {
-            if (sortBy === 'popular') return (b.reviews || 0) - (a.reviews || 0);
-            if (sortBy === 'newest') return new Date(b.verifiedDate) - new Date(a.verifiedDate);
-            if (sortBy === 'az') return a.name.localeCompare(b.name);
-            if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-            return 0;
-        });
+    // Compute paginated items
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const displayedWebsites = websites.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(websites.length / itemsPerPage);
 
     return (
         <PageLayout>
@@ -89,12 +99,23 @@ const Browse = () => {
                             </div>
 
                             {/* Controls */}
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* Verified Checkbox */}
+                                <label className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-50/50 border border-gray-100 cursor-pointer hover:bg-white transition-colors duration-200 font-medium text-sm text-text-main select-none h-[48px]">
+                                    <input
+                                        type="checkbox"
+                                        checked={verifiedOnly}
+                                        onChange={(e) => setVerifiedOnly(e.target.checked)}
+                                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
+                                    />
+                                    <span>Verified Only</span>
+                                </label>
+
                                 <div className="relative min-w-[160px]">
                                     <select
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
-                                        className="w-full pl-4 pr-10 py-3 rounded-xl bg-gray-50/50 border border-gray-100 focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all duration-300 outline-none appearance-none font-medium cursor-pointer"
+                                        className="w-full pl-4 pr-10 py-3 rounded-xl bg-gray-50/50 border border-gray-100 focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all duration-300 outline-none appearance-none font-medium cursor-pointer h-[48px]"
                                     >
                                         <option value="popular">🔥 Most Popular</option>
                                         <option value="newest">🆕 Newest First</option>
@@ -104,7 +125,7 @@ const Browse = () => {
                                     <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                                 </div>
 
-                                <div className="flex bg-gray-50/80 p-1.5 rounded-xl border border-gray-100">
+                                <div className="flex bg-gray-50/80 p-1.5 rounded-xl border border-gray-100 h-[48px] items-center">
                                     <button
                                         onClick={() => setViewMode('grid')}
                                         className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
@@ -125,15 +146,55 @@ const Browse = () => {
                     {/* Results Count */}
                     <div className="mb-6 flex items-center gap-2">
                         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                            {filteredWebsites.length}
+                            {websites.length}
                         </span>
                         <span className="text-sm font-semibold text-text-muted uppercase tracking-wider">Results Found</span>
                     </div>
 
                     {/* Grid */}
-                    <WebsiteGrid websites={filteredWebsites} viewMode={viewMode} />
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+                            <p className="text-text-muted">Loading platforms...</p>
+                        </div>
+                    ) : (
+                        <>
+                            <WebsiteGrid websites={displayedWebsites} viewMode={viewMode} />
 
-                    {filteredWebsites.length === 0 && (
+                            {websites.length > 0 && totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-2 mt-12">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all duration-300 ${currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-305 hover:bg-gray-50 border-gray-300 text-text-main'}`}
+                                    >
+                                        Previous
+                                    </button>
+                                    {[...Array(totalPages)].map((_, index) => {
+                                        const pageNumber = index + 1;
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                onClick={() => setCurrentPage(pageNumber)}
+                                                className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${currentPage === pageNumber ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border-2 border-gray-200 text-text-main hover:border-primary hover:text-primary'}`}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        );
+                                    })}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all duration-300 ${currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-305 hover:bg-gray-50 border-gray-300 text-text-main'}`}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {!loading && websites.length === 0 && (
                         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Search className="w-8 h-8 text-gray-300" />
@@ -141,7 +202,7 @@ const Browse = () => {
                             <h3 className="text-xl font-bold text-text-main mb-2">No websites found</h3>
                             <p className="text-text-muted">Try adjusting your search or filters to find what you're looking for.</p>
                             <button
-                                onClick={() => { setSearchQuery(''); setSortBy('popular'); }}
+                                onClick={() => { setSearchQuery(''); setSortBy('popular'); setVerifiedOnly(false); }}
                                 className="mt-6 text-primary font-semibold hover:underline"
                             >
                                 Clear all filters

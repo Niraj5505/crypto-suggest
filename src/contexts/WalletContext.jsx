@@ -16,39 +16,79 @@ export const WalletProvider = ({ children }) => {
     const [walletType, setWalletType] = useState(null);
     const [connectedAt, setConnectedAt] = useState(null);
 
-    // Load wallet state from localStorage on mount
+    // Check if wallet is already connected on load
     useEffect(() => {
-        const savedConnection = localStorage.getItem('walletConnection');
-        if (savedConnection) {
-            try {
-                const connection = JSON.parse(savedConnection);
-                setIsConnected(connection.isConnected);
-                setWalletAddress(connection.address);
-                setWalletType(connection.type);
-                setConnectedAt(connection.connectedAt);
-            } catch (error) {
-                console.error('Failed to restore wallet connection:', error);
-                localStorage.removeItem('walletConnection');
+        const checkWalletConnected = async () => {
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        setIsConnected(true);
+                        setWalletAddress(accounts[0]);
+                        setWalletType('MetaMask');
+                        
+                        const savedConnection = localStorage.getItem('walletConnection');
+                        if (savedConnection) {
+                            try {
+                                const connection = JSON.parse(savedConnection);
+                                setConnectedAt(connection.connectedAt);
+                            } catch (e) {
+                                setConnectedAt(Date.now());
+                            }
+                        } else {
+                            setConnectedAt(Date.now());
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking wallet connection:', error);
+                }
             }
+        };
+        checkWalletConnected();
+    }, []);
+
+    // Listen for accountsChanged and disconnect events
+    useEffect(() => {
+        if (window.ethereum) {
+            const handleAccountsChanged = (accounts) => {
+                if (accounts.length > 0) {
+                    setIsConnected(true);
+                    setWalletAddress(accounts[0]);
+                    setWalletType('MetaMask');
+                    
+                    const connection = {
+                        isConnected: true,
+                        address: accounts[0],
+                        type: 'MetaMask',
+                        connectedAt: Date.now()
+                    };
+                    localStorage.setItem('walletConnection', JSON.stringify(connection));
+                } else {
+                    disconnectWallet();
+                }
+            };
+
+            window.ethereum.on('accountsChanged', handleAccountsChanged);
+
+            return () => {
+                if (window.ethereum.removeListener) {
+                    window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                }
+            };
         }
     }, []);
 
-    // Generate a mock wallet address
-    const generateMockAddress = () => {
-        const chars = '0123456789abcdef';
-        let address = '0x';
-        for (let i = 0; i < 40; i++) {
-            address += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return address;
-    };
-
-    // Simulate wallet connection
+    // Connect wallet using window.ethereum
     const connectWallet = async (type = 'MetaMask') => {
-        return new Promise((resolve) => {
-            // Simulate connection delay
-            setTimeout(() => {
-                const address = generateMockAddress();
+        if (!window.ethereum) {
+            alert('🦊 MetaMask not detected! Please install MetaMask extension to connect your wallet.');
+            return { success: false, error: 'No provider' };
+        }
+
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            if (accounts.length > 0) {
+                const address = accounts[0];
                 const timestamp = Date.now();
 
                 setIsConnected(true);
@@ -56,7 +96,6 @@ export const WalletProvider = ({ children }) => {
                 setWalletType(type);
                 setConnectedAt(timestamp);
 
-                // Save to localStorage
                 const connection = {
                     isConnected: true,
                     address,
@@ -65,9 +104,14 @@ export const WalletProvider = ({ children }) => {
                 };
                 localStorage.setItem('walletConnection', JSON.stringify(connection));
 
-                resolve({ success: true, address });
-            }, 1500); // 1.5 second delay to simulate real connection
-        });
+                return { success: true, address };
+            }
+            return { success: false, error: 'No accounts' };
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+            alert(`❌ Failed to connect wallet: ${error.message}`);
+            return { success: false, error: error.message };
+        }
     };
 
     // Disconnect wallet

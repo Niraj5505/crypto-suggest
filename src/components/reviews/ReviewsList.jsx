@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReviewCard from './ReviewCard';
 import { ChevronDown } from 'lucide-react';
 
-const ReviewsList = ({ reviews }) => {
+const ReviewsList = ({ reviews, onDelete }) => {
     const [sortBy, setSortBy] = useState('newest');
     const [showAll, setShowAll] = useState(false);
 
@@ -58,7 +58,7 @@ const ReviewsList = ({ reviews }) => {
             {/* Reviews Grid */}
             <div className="space-y-6">
                 {displayedReviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
+                    <ReviewCard key={review.id} review={review} onDelete={onDelete} />
                 ))}
             </div>
 

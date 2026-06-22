@@ -4,6 +4,7 @@ import PageLayout from '../components/layout/PageLayout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { Check, Upload, ChevronRight, ChevronLeft, Sparkles, PartyPopper } from 'lucide-react';
+import { submitWebsite } from '../services/api';
 
 // Simple CSS Confetti Component
 const Confetti = () => {
@@ -45,22 +46,35 @@ const SubmitWebsite = () => {
     const nextStep = () => setStep(prev => Math.min(prev + 1, 3));
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
-    const handleSubmit = (e) => {
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmitted(true);
-        // Reset after 3 seconds for demo purposes
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setStep(1);
-            setFormData({
-                websiteName: '',
-                websiteUrl: '',
-                email: '',
-                category: '',
-                description: '',
-                role: ''
-            });
-        }, 5000);
+        setSubmitError('');
+        setSubmitting(true);
+
+        try {
+            await submitWebsite(formData);
+            setIsSubmitted(true);
+            // Reset after 5 seconds for demo purposes
+            setTimeout(() => {
+                setIsSubmitted(false);
+                setStep(1);
+                setFormData({
+                    websiteName: '',
+                    websiteUrl: '',
+                    email: '',
+                    category: '',
+                    description: '',
+                    role: ''
+                });
+            }, 5000);
+        } catch (error) {
+            setSubmitError(error.message || 'Failed to submit website.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     // Animation Variants
@@ -308,12 +322,22 @@ const SubmitWebsite = () => {
                                                     <Checkbox label="I understand verification may take 3-5 business days" />
                                                 </div>
 
+                                                {submitError && (
+                                                    <div className="p-4 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded-xl">
+                                                        ❌ {submitError}
+                                                    </div>
+                                                )}
+
                                                 <div className="flex gap-4">
                                                     <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12">
                                                         <ChevronLeft className="w-5 h-5 mr-2" /> Back
                                                     </Button>
-                                                    <Button type="submit" className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 shadow-lg shadow-green-500/30">
-                                                        Submit for Review
+                                                    <Button 
+                                                        type="submit" 
+                                                        disabled={submitting}
+                                                        className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 shadow-lg shadow-green-500/30 disabled:bg-gray-300 disabled:shadow-none"
+                                                    >
+                                                        {submitting ? 'Submitting...' : 'Submit for Review'}
                                                     </Button>
                                                 </div>
                                             </motion.div>

@@ -43,7 +43,6 @@ const Footer = () => {
                         <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-accent">For Website Owners</h4>
                         <ul className="space-y-2">
                             <li><Link to="/submit" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">Submit Website</Link></li>
-                            <li><Link to="/about" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">Verification Process</Link></li>
                             <li><Link to="/contact" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">Contact Us</Link></li>
                         </ul>
                     </div>
@@ -52,9 +51,9 @@ const Footer = () => {
                     <div>
                         <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-accent">Resources</h4>
                         <ul className="space-y-2">
+                            <li><Link to="/rankings" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">Leaderboards & Rankings</Link></li>
                             <li><Link to="/about" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">About Us</Link></li>
                             <li><Link to="/contact" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">FAQ</Link></li>
-                            <li><Link to="/contact" className="text-white/70 hover:text-accent text-sm transition-colors inline-block py-1">Contact</Link></li>
                         </ul>
 
                         {/* Social Media */}

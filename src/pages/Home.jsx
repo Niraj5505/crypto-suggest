@@ -1,15 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Shield, TrendingUp, Users, ArrowRight, Check, Star, Zap, Globe, Lock } from 'lucide-react';
+import { Search, Shield, TrendingUp, Users, ArrowRight, Check, Star, Zap, Globe, Lock, AlertTriangle } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import WebsiteCard from '../components/website/WebsiteCard';
-import { mockCategories, mockTestimonials, getFeaturedWebsites, getRecentlyVerifiedWebsites } from '../data/mockData';
+import { mockTestimonials } from '../data/mockData';
+import { getCategories, getWebsites } from '../services/api';
 
 const Home = () => {
-    const featuredWebsites = getFeaturedWebsites().slice(0, 6);
+    const [categories, setCategories] = useState([]);
+    const [featuredWebsites, setFeaturedWebsites] = useState([]);
+    const [scamWebsites, setScamWebsites] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHomeData = async () => {
+            try {
+                const cats = await getCategories();
+                const sites = await getWebsites({ featured: true, limit: 6 });
+                setCategories(cats);
+                setFeaturedWebsites(sites);
+
+                const allSites = await getWebsites({ verifiedOnly: 'false' });
+                const scams = allSites.filter(site => site.hasScamAlert);
+                setScamWebsites(scams);
+            } catch (error) {
+                console.error('Error fetching home data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHomeData();
+    }, []);
 
     const trustFactors = [
         { icon: Shield, title: 'Manual Verification', description: 'Every website is manually reviewed before listing', color: 'bg-blue-100 text-blue-600' },
@@ -28,9 +52,18 @@ const Home = () => {
         return gradients[index % gradients.length];
     };
 
+
     return (
         <PageLayout>
             <div className="overflow-hidden">
+                {scamWebsites.length > 0 && (
+                    <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white py-4 px-4 text-center font-bold text-sm flex items-center justify-center gap-2 mt-20 relative z-30 shadow-md">
+                        <AlertTriangle className="w-5 h-5 flex-shrink-0 animate-pulse" />
+                        <span>
+                            ⚠️ SECURITY ALERT: Confirmed scams detected on {scamWebsites.map(s => s.name).join(', ')}. Please avoid interacting with these platforms.
+                        </span>
+                    </div>
+                )}
                 {/* Hero Section - Split Screen Modern Layout */}
                 <section className="relative min-h-screen flex items-center py-16 sm:py-20 lg:py-0 overflow-hidden bg-[#FAFBFF]">
                     {/* Background Elements */}
@@ -157,10 +190,10 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                            {mockCategories.filter(cat => cat.featured).map((category, index) => {
+                            {categories.filter(cat => cat.featured).map((category, index) => {
                                 const gradient = getGradient(index);
                                 return (
-                                    <Link key={category.id} to={`/category/${category.slug}`} className="group">
+                                    <Link key={category._id || category.slug} to={`/category/${category.slug}`} className="group">
                                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/60 h-full relative overflow-hidden hover:bg-white/90">
                                             {/* Decorative gradient corner */}
                                             <div className={`absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full -mr-10 -mt-10 transition-opacity group-hover:opacity-20`}></div>

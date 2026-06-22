@@ -1,9 +1,14 @@
 import React from 'react';
-import { Star, Check } from 'lucide-react';
+import { Star, Check, Trash2 } from 'lucide-react';
+import { useWallet } from '../../contexts/WalletContext';
 
-const ReviewCard = ({ review }) => {
+const ReviewCard = ({ review, onDelete }) => {
+    const { walletAddress } = useWallet();
+    const isUserOwnReview = walletAddress && review.walletAddress && walletAddress.toLowerCase() === review.walletAddress.toLowerCase();
+
     // Truncate wallet address
     const getTruncatedAddress = (address) => {
+        if (!address) return '';
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
     };
 
@@ -36,13 +41,13 @@ const ReviewCard = ({ review }) => {
                     <div className="flex items-center gap-2">
                         <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
                             <span className="text-primary font-bold text-sm">
-                                {review.walletAddress.slice(2, 4).toUpperCase()}
+                                {review.walletAddress ? review.walletAddress.slice(2, 4).toUpperCase() : '??'}
                             </span>
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm font-semibold text-text-main">
-                                    {getTruncatedAddress(review.walletAddress)}
+                                    {review.walletAddress ? getTruncatedAddress(review.walletAddress) : 'Unknown'}
                                 </span>
                                 {review.verified && (
                                     <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-full">
@@ -75,17 +80,56 @@ const ReviewCard = ({ review }) => {
                 ))}
             </div>
 
+            {/* Review Title */}
+            {review.title && (
+                <h4 className="text-lg font-bold text-text-main mb-2">
+                    {review.title}
+                </h4>
+            )}
+
             {/* Review Text */}
             <p className="text-base text-text-main leading-relaxed mb-4">
                 {review.text}
             </p>
 
+            {/* Screenshot Proof */}
+            {review.screenshotUrl && (
+                <div className="mb-4">
+                    <a
+                        href={review.screenshotUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block relative group overflow-hidden rounded-xl border border-gray-200 hover:border-primary transition-colors max-w-xs"
+                    >
+                        <img
+                            src={review.screenshotUrl}
+                            alt="Evidence Proof"
+                            className="max-h-40 object-cover rounded-xl transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold">
+                            View Proof Image
+                        </div>
+                    </a>
+                </div>
+            )}
+
             {/* Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                 <button className="flex items-center gap-2 text-sm text-text-muted hover:text-primary transition-colors">
                     <span>👍</span>
-                    <span>Helpful ({review.helpful})</span>
+                    <span>Helpful ({review.helpful || 0})</span>
                 </button>
+
+                {onDelete && isUserOwnReview && (
+                    <button
+                        onClick={() => onDelete(review.id)}
+                        className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 font-semibold transition-colors py-1 px-3 hover:bg-red-50 rounded-lg"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Delete</span>
+                    </button>
+                )}
             </div>
         </div>
     );

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import RatingSlider from './RatingSlider';
-import { hasUserReviewed } from '../../data/mockReviews';
 
-const ReviewForm = ({ websiteId, onClose, onSubmit }) => {
+const ReviewForm = ({ websiteId, onClose, onSubmit, reviews = [] }) => {
     const { isConnected, walletAddress, getTruncatedAddress } = useWallet();
     const [rating, setRating] = useState(75);
+    const [reviewTitle, setReviewTitle] = useState('');
+    const [screenshotUrl, setScreenshotUrl] = useState('');
     const [reviewText, setReviewText] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +25,10 @@ const ReviewForm = ({ websiteId, onClose, onSubmit }) => {
             return;
         }
 
-        if (hasUserReviewed(websiteId, walletAddress)) {
+        const alreadyReviewed = reviews.some(
+            r => r.walletAddress && r.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+        );
+        if (alreadyReviewed) {
             setError('You have already reviewed this website');
             return;
         }
@@ -42,22 +46,18 @@ const ReviewForm = ({ websiteId, onClose, onSubmit }) => {
         // Submit review
         setIsSubmitting(true);
 
-        // Simulate submission delay
-        setTimeout(() => {
-            const newReview = {
-                id: `rev-${Date.now()}`,
-                websiteId,
+        try {
+            await onSubmit({
                 walletAddress,
                 rating,
                 text: reviewText,
-                timestamp: Date.now(),
-                verified: true,
-                helpful: 0
-            };
-
-            onSubmit(newReview);
+                title: reviewTitle.trim() || undefined,
+                screenshotUrl: screenshotUrl.trim() || undefined
+            });
+        } catch (err) {
+            setError(err.message || 'Failed to submit review');
             setIsSubmitting(false);
-        }, 1000);
+        }
     };
 
     const characterCount = reviewText.length;
@@ -99,6 +99,35 @@ const ReviewForm = ({ websiteId, onClose, onSubmit }) => {
                         <RatingSlider value={rating} onChange={setRating} />
                     </div>
 
+                    {/* Review Title */}
+                    <div>
+                        <label className="block text-sm font-semibold text-text-main mb-2">
+                            Review Title <span className="text-text-muted font-normal">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={reviewTitle}
+                            onChange={(e) => setReviewTitle(e.target.value)}
+                            placeholder="Summarize your experience (e.g. Great interface, fast transactions)"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary transition-colors text-text-main"
+                            maxLength={50}
+                        />
+                    </div>
+
+                    {/* Screenshot URL */}
+                    <div>
+                        <label className="block text-sm font-semibold text-text-main mb-2">
+                            Evidence Screenshot URL <span className="text-text-muted font-normal">(Optional)</span>
+                        </label>
+                        <input
+                            type="url"
+                            value={screenshotUrl}
+                            onChange={(e) => setScreenshotUrl(e.target.value)}
+                            placeholder="https://example.com/screenshot.png"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary transition-colors text-text-main"
+                        />
+                    </div>
+
                     {/* Review Text */}
                     <div>
                         <label className="block text-sm font-semibold text-text-main mb-2">
@@ -112,7 +141,7 @@ const ReviewForm = ({ websiteId, onClose, onSubmit }) => {
                                     ? 'border-red-300 focus:border-red-500'
                                     : 'border-gray-200 focus:border-primary'
                                 }`}
-                            rows={6}
+                            rows={5}
                             maxLength={MAX_LENGTH}
                         />
 
