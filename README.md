@@ -208,3 +208,5 @@ For questions or feedback, visit the Contact page in the app or open an issue on
 ---
 
 Built with ❤️ for the crypto community
+
+# crypto-suggest
