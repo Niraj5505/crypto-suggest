@@ -14,8 +14,13 @@ const getTransporter = () => {
     }
 
     return nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass }
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // use SSL
+        auth: { user, pass },
+        tls: {
+            rejectUnauthorized: false
+        }
     });
 };
 
@@ -33,7 +38,16 @@ export const sendVerificationOtpEmail = async (toEmail, userName, otp) => {
     const mailOptions = {
         from: `"CryptoSuggest" <${process.env.EMAIL_USER}>`,
         to: toEmail,
-        subject: '🔐 Your CryptoSuggest Email Verification Code',
+        subject: 'Your CryptoSuggest Verification Code: ' + otp,
+        // Plain text fallback — critical for spam filters
+        text: `Hi ${userName},\n\nYour CryptoSuggest email verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not register, please ignore this email.\n\n— CryptoSuggest Team`,
+        // Anti-spam headers
+        headers: {
+            'X-Priority': '1',
+            'X-MSMail-Priority': 'High',
+            'X-Mailer': 'CryptoSuggest Mailer',
+            'X-Category': 'transactional'
+        },
         html: `
         <!DOCTYPE html>
         <html lang="en">
@@ -86,7 +100,16 @@ export const sendPasswordResetOtpEmail = async (toEmail, userName, otp) => {
     const mailOptions = {
         from: `"CryptoSuggest" <${process.env.EMAIL_USER}>`,
         to: toEmail,
-        subject: '🔑 Your CryptoSuggest Password Reset Code',
+        subject: 'Your CryptoSuggest Password Reset Code: ' + otp,
+        // Plain text fallback — critical for spam filters
+        text: `Hi ${userName},\n\nYour CryptoSuggest password reset code is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\n— CryptoSuggest Team`,
+        // Anti-spam headers
+        headers: {
+            'X-Priority': '1',
+            'X-MSMail-Priority': 'High',
+            'X-Mailer': 'CryptoSuggest Mailer',
+            'X-Category': 'transactional'
+        },
         html: `
         <!DOCTYPE html>
         <html lang="en">
