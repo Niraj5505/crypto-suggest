@@ -429,6 +429,11 @@ app.delete('/api/admin/reviews/:id', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running in development mode on port ${PORT}`);
-});
+// Only start listening when run directly (local dev), not when imported as serverless
+if (process.env.NODE_ENV !== 'production' || process.argv[1]?.includes('index.js')) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running in development mode on port ${PORT}`);
+    });
+}
+
+export default app;
