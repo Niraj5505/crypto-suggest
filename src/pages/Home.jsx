@@ -52,7 +52,6 @@ const Home = () => {
         return gradients[index % gradients.length];
     };
 
-
     return (
         <PageLayout>
             <div className="overflow-hidden">
@@ -65,17 +64,17 @@ const Home = () => {
                     </div>
                 )}
                 {/* Hero Section - Split Screen Modern Layout */}
-                <section className="relative min-h-screen flex items-center py-16 sm:py-20 lg:py-0 overflow-hidden bg-[#FAFBFF]">
+                <section className="relative min-h-screen flex items-center py-24 sm:py-28 lg:py-0 overflow-hidden bg-[#FAFBFF]">
                     {/* Background Elements */}
                     <div className="absolute top-0 right-0 w-full sm:w-[60%] h-full bg-gradient-to-l from-blue-50/80 via-purple-50/50 to-transparent z-0"></div>
                     <div className="absolute -top-24 -right-24 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl opacity-60 animate-pulse-slow"></div>
                     <div className="absolute bottom-0 left-0 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-gradient-to-tr from-cyan-100/30 to-blue-100/30 rounded-full blur-3xl opacity-50"></div>
 
                     <div className="container-custom relative z-10">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12 items-center">
 
                             {/* Left Side: Content */}
-                            <div className="space-y-6 sm:space-y-8 max-w-2xl pt-16 sm:pt-20 lg:pt-0">
+                            <div className="space-y-6 sm:space-y-8 max-w-2xl pt-8 sm:pt-10 lg:pt-0">
                                 {/* New Badge */}
                                 <div className="inline-flex items-center gap-2 sm:gap-3 bg-white p-1 pr-3 sm:pr-4 rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-default animate-fade-in-up">
                                     <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-2 sm:px-3 py-1 rounded-full uppercase tracking-wider">New</span>
@@ -133,11 +132,22 @@ const Home = () => {
                                 {/* Trust Metrics */}
                                 <div className="flex flex-wrap items-center gap-4 sm:gap-8 pt-2 sm:pt-4 animate-fade-in-up delay-400">
                                     <div className="flex -space-x-3 sm:-space-x-4">
-                                        {[1, 2, 3, 4].map((i) => (
-                                            <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm first:bg-blue-100 first:text-blue-600">
-                                                {i === 4 ? '+' : ''}
-                                            </div>
+                                        {[
+                                            'https://randomuser.me/api/portraits/women/44.jpg',
+                                            'https://randomuser.me/api/portraits/men/32.jpg',
+                                            'https://randomuser.me/api/portraits/women/68.jpg',
+                                        ].map((src, i) => (
+                                            <img
+                                                key={i}
+                                                src={src}
+                                                alt={`User ${i + 1}`}
+                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white shadow-sm object-cover"
+                                            />
                                         ))}
+                                        {/* +49K overflow indicator */}
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white flex items-center justify-center shadow-sm">
+                                            <span className="text-[8px] sm:text-[9px] font-black text-white leading-none">+49K</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <p className="font-bold text-gray-900 text-base sm:text-lg">50,000+</p>
@@ -152,12 +162,12 @@ const Home = () => {
                             </div>
 
                             {/* Right Side: 3D Visual */}
-                            <div className="relative hidden lg:flex items-center justify-center p-10 h-full">
-                                <div className="relative w-full max-w-[650px] animate-float-slow">
+                            <div className="relative flex items-center justify-center lg:p-8 xl:p-10 h-full order-first lg:order-last">
+                                <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[600px] xl:max-w-[650px] animate-float-slow drop-shadow-2xl">
                                     <img
-                                        src="/hero-new.png"
-                                        alt="Crypto Visual"
-                                        className="w-full h-auto object-contain mix-blend-multiply"
+                                        src="/hero-home.png"
+                                        alt="Trusted Crypto Platforms - Verified & Scam Protected"
+                                        className="w-full h-auto object-contain rounded-2xl"
                                     />
                                 </div>
                             </div>
@@ -293,16 +303,16 @@ const Home = () => {
                             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-1 bg-gradient-to-r from-blue-100 via-purple-100 to-green-100 border-t-2 border-dashed border-gray-200 z-0"></div>
 
                             {[
-                                { icon: Search, title: 'Browse Categories', desc: 'Explore 15+ categories including exchanges and DeFi', color: 'blue' },
-                                { icon: Zap, title: 'Compare', desc: 'Review key features, fees, and community ratings', color: 'purple' },
-                                { icon: Check, title: 'Select & Go', desc: 'Choose the best platform and visit securely', color: 'green' }
+                                { icon: Search, title: 'Browse Categories', desc: 'Explore 15+ categories including exchanges and DeFi', badgeBg: 'bg-blue-500', borderColor: 'border-blue-50', iconColor: 'text-blue-500' },
+                                { icon: Zap, title: 'Compare', desc: 'Review key features, fees, and community ratings', badgeBg: 'bg-purple-500', borderColor: 'border-purple-50', iconColor: 'text-purple-500' },
+                                { icon: Check, title: 'Select & Go', desc: 'Choose the best platform and visit securely', badgeBg: 'bg-green-500', borderColor: 'border-green-50', iconColor: 'text-green-500' }
                             ].map((step, idx) => (
                                 <div key={idx} className="relative z-10 text-center group">
                                     <div className="relative inline-block mb-8">
-                                        <div className={`w-24 h-24 bg-white rounded-2xl border-4 border-${step.color}-50 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                            <step.icon className={`w-10 h-10 text-${step.color}-500`} />
+                                        <div className={`w-24 h-24 bg-white rounded-2xl border-4 ${step.borderColor} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                            <step.icon className={`w-10 h-10 ${step.iconColor}`} />
                                         </div>
-                                        <div className={`absolute -top-4 -right-4 w-10 h-10 rounded-full bg-${step.color}-500 text-white flex items-center justify-center font-bold text-xl border-4 border-white shadow-md`}>
+                                        <div className={`absolute -top-4 -right-4 w-10 h-10 rounded-full ${step.badgeBg} text-white flex items-center justify-center font-bold text-xl border-4 border-white shadow-md`}>
                                             {idx + 1}
                                         </div>
                                     </div>

@@ -11,7 +11,6 @@ import Compare from './pages/Compare';
 import { CompareProvider } from './contexts/CompareContext';
 import { WalletProvider } from './contexts/WalletContext';
 import { BookmarkProvider } from './contexts/BookmarkContext';
-import { AuthProvider } from './contexts/AuthContext';
 import CompareBar from './components/common/CompareBar';
 import Bookmarks from './pages/Bookmarks';
 import NotFound from './pages/NotFound';
@@ -19,17 +18,12 @@ import ScrollToTop from './components/common/ScrollToTop';
 
 import Admin from './pages/Admin';
 import Rankings from './pages/Rankings';
-import Profile from './pages/Profile';
-import VerifyEmail from './pages/VerifyEmail';
-import ResetPassword from './pages/ResetPassword';
-
 function App() {
     return (
         <WalletProvider>
-            <AuthProvider>
-                <CompareProvider>
-                    <BookmarkProvider>
-                        <Router>
+            <CompareProvider>
+                <BookmarkProvider>
+                    <Router>
                             <ScrollToTop />
                             <div className="min-h-screen bg-background-soft font-sans text-text-main">
                                 <Routes>
@@ -45,9 +39,6 @@ function App() {
                                     <Route path="/bookmarks" element={<Bookmarks />} />
                                     <Route path="/admin" element={<Admin />} />
                                     <Route path="/rankings" element={<Rankings />} />
-                                    <Route path="/profile" element={<Profile />} />
-                                    <Route path="/verify/:token" element={<VerifyEmail />} />
-                                    <Route path="/reset-password/:token" element={<ResetPassword />} />
                                     <Route path="*" element={<NotFound />} />
                                 </Routes>
                             <CompareBar />
@@ -55,7 +46,6 @@ function App() {
                     </Router>
                 </BookmarkProvider>
             </CompareProvider>
-            </AuthProvider>
         </WalletProvider>
     );
 }
