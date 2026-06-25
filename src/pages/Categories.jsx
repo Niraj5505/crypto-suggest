@@ -68,7 +68,11 @@ const Categories = () => {
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                         <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 sm:mb-6 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative z-10`}>
-                                            {getIconComponent(category.icon)}
+                                            <img 
+                                                src={`https://www.google.com/s2/favicons?domain=${category.brandDomain}&sz=128`}
+                                                alt={category.name}
+                                                className="w-7 h-7 sm:w-9 sm:h-9 object-contain bg-white rounded-lg p-1 shadow-sm"
+                                            />
                                         </div>
 
                                         <h3 className="text-lg sm:text-xl font-bold text-text-main mb-2 group-hover:text-primary transition-colors relative z-10">{category.name}</h3>

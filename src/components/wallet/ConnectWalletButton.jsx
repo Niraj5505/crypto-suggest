@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { ChevronDown, Copy, LogOut, Check } from 'lucide-react';
+import { ChevronDown, Copy, LogOut, Check, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import WalletConnectionModal from './WalletConnectionModal';
 
 const ConnectWalletButton = ({ className = "" }) => {
-    const { isConnected, getTruncatedAddress, disconnectWallet } = useWallet();
+    const { isConnected, walletAddress, getTruncatedAddress, disconnectWallet } = useWallet();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const handleCopyAddress = () => {
-        const { walletAddress } = useWallet();
-        navigator.clipboard.writeText(walletAddress);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (walletAddress) {
+            navigator.clipboard.writeText(walletAddress);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     const handleDisconnect = () => {
@@ -63,6 +65,15 @@ const ConnectWalletButton = ({ className = "" }) => {
                                 {getTruncatedAddress()}
                             </div>
                         </div>
+
+                        <Link
+                            to="/dashboard"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left"
+                        >
+                            <LayoutDashboard className="w-4 h-4 text-primary" />
+                            <span className="text-primary font-semibold">My Dashboard</span>
+                        </Link>
 
                         <button
                             onClick={handleCopyAddress}

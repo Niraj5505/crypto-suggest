@@ -18,6 +18,19 @@ export const WalletProvider = ({ children }) => {
 
     // Check if wallet is already connected on load
     useEffect(() => {
+        if (import.meta.env.DEV && !window.ethereum) {
+            window.ethereum = {
+                request: async ({ method }) => {
+                    if (method === 'eth_accounts' || method === 'eth_requestAccounts') {
+                        return ['0x71c7656ec7ab88b098defb751b7401b5f6d8976f'];
+                    }
+                    return [];
+                },
+                on: () => {},
+                removeListener: () => {}
+            };
+        }
+
         const checkWalletConnected = async () => {
             if (window.ethereum) {
                 try {

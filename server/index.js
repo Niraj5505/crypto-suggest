@@ -6,6 +6,8 @@ import Category from './models/Category.js';
 import Website from './models/Website.js';
 import Review from './models/Review.js';
 import ScamReport from './models/ScamReport.js';
+import User from './models/User.js';
+import Project from './models/Project.js';
 // Load env variables FIRST — must be before any route or service call
 dotenv.config();
 
@@ -244,7 +246,7 @@ app.post('/api/websites/:slug/reviews', async (req, res) => {
 // @route   POST /api/websites/:slug/scam-report
 app.post('/api/websites/:slug/scam-report', async (req, res) => {
     try {
-        const { walletAddress, scamType, txHash, evidenceUrl, description } = req.body;
+        const { walletAddress, scammerWalletAddress, scamType, txHash, evidenceUrl, description } = req.body;
         const websiteId = req.params.slug;
 
         if (!walletAddress || !scamType || !description) {
@@ -260,6 +262,7 @@ app.post('/api/websites/:slug/scam-report', async (req, res) => {
         const newReport = new ScamReport({
             websiteId,
             walletAddress,
+            scammerWalletAddress,
             scamType,
             txHash,
             evidenceUrl,
@@ -274,12 +277,28 @@ app.post('/api/websites/:slug/scam-report', async (req, res) => {
         res.status(500).json({ message: 'Server Error submitting scam report', error: error.message });
     }
 });
+// @desc    Get scam reports filed by a wallet address
+// @route   GET /api/scam-reports/my-reports?walletAddress=0x...
+app.get('/api/scam-reports/my-reports', async (req, res) => {
+    try {
+        const { walletAddress } = req.query;
+        if (!walletAddress) {
+            return res.status(400).json({ message: 'walletAddress query param required' });
+        }
+        const reports = await ScamReport.find({ walletAddress }).sort({ createdAt: -1 });
+        res.json(reports);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching user scam reports', error: error.message });
+    }
+});
+
 // @desc    Get rankings grouped by category
 // @route   GET /api/rankings
 app.get('/api/rankings', async (req, res) => {
     try {
         const topRated = await Website.find({ verified: true }).sort({ trustScore: -1 }).limit(10);
         const trending = await Website.find({ verified: true }).sort({ reviewCount: -1 }).limit(10);
+        const mostReviewed = await Website.find({ verified: true }).sort({ reviewCount: -1 }).limit(10);
         const newListings = await Website.find({ verified: true }).sort({ verifiedDate: -1 }).limit(10);
         
         const mapWithScam = async (list) => {
@@ -292,6 +311,7 @@ app.get('/api/rankings', async (req, res) => {
         res.json({
             topRated: await mapWithScam(topRated),
             trending: await mapWithScam(trending),
+            mostReviewed: await mapWithScam(mostReviewed),
             newListings: await mapWithScam(newListings)
         });
     } catch (error) {
@@ -422,6 +442,315 @@ app.delete('/api/admin/reviews/:id', async (req, res) => {
         res.json({ success: true, message: 'Review deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error deleting review', error: error.message });
+    }
+});
+
+
+// =========================================================================
+// User Profile & Project API Routes
+// =========================================================================
+
+// @desc    Get user profile (creates if not exists)
+// @route   GET /api/users/:walletAddress
+app.get('/api/users/:walletAddress', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        let user = await User.findOne({ walletAddress });
+        if (!user) {
+            user = new User({ walletAddress });
+            await user.save();
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching user profile', error: error.message });
+    }
+});
+
+// @desc    Update user profile
+// @route   PUT /api/users/:walletAddress
+app.put('/api/users/:walletAddress', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const { displayName, bio, location, website, twitter, github, linkedin, avatarEmoji, avatarBg } = req.body;
+        
+        let user = await User.findOne({ walletAddress });
+        if (!user) {
+            user = new User({ walletAddress });
+        }
+        
+        if (displayName !== undefined) user.displayName = displayName;
+        if (bio !== undefined) user.bio = bio;
+        if (location !== undefined) user.location = location;
+        if (website !== undefined) user.website = website;
+        if (twitter !== undefined) user.twitter = twitter;
+        if (github !== undefined) user.github = github;
+        if (linkedin !== undefined) user.linkedin = linkedin;
+        if (avatarEmoji !== undefined) user.avatarEmoji = avatarEmoji;
+        if (avatarBg !== undefined) user.avatarBg = avatarBg;
+        
+        await user.save();
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user profile', error: error.message });
+    }
+});
+
+// @desc    Update user subscription
+// @route   PUT /api/users/:walletAddress/subscription
+app.put('/api/users/:walletAddress/subscription', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const { planId, subscribedAt } = req.body;
+        
+        let user = await User.findOne({ walletAddress });
+        if (!user) {
+            user = new User({ walletAddress });
+        }
+        
+        user.subscribedPlan = planId; // 'starter', 'pro', 'enterprise', or null
+        user.subscribedAt = subscribedAt || (planId ? Date.now() : null);
+        
+        await user.save();
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user subscription', error: error.message });
+    }
+});
+
+// @desc    Get user reviews
+// @route   GET /api/users/:walletAddress/reviews
+app.get('/api/users/:walletAddress/reviews', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        
+        // Find reviews by user
+        const reviews = await Review.find({ walletAddress }).sort({ timestamp: -1 });
+        
+        // Find matching websites to get names/urls for logos
+        const websiteIds = reviews.map(r => r.websiteId);
+        const websites = await Website.find({ slug: { $in: websiteIds } });
+        
+        // Create a lookup map of website slug -> website details
+        const websiteMap = {};
+        websites.forEach(w => {
+            websiteMap[w.slug] = {
+                name: w.name,
+                url: w.url,
+                category: w.category
+            };
+        });
+        
+        // Combine them
+        const reviewsWithWebsites = reviews.map(r => {
+            const site = websiteMap[r.websiteId] || { name: r.websiteId, url: '', category: '' };
+            return {
+                ...r.toObject(),
+                websiteName: site.name,
+                websiteUrl: site.url,
+                websiteCategory: site.category
+            };
+        });
+        
+        res.json(reviewsWithWebsites);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching user reviews', error: error.message });
+    }
+});
+
+// @desc    Get user projects
+// @route   GET /api/users/:walletAddress/projects
+app.get('/api/users/:walletAddress/projects', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const projects = await Project.find({ walletAddress }).sort({ createdAt: -1 });
+        res.json(projects);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching projects', error: error.message });
+    }
+});
+
+// @desc    Add user project
+// @route   POST /api/users/:walletAddress/projects
+app.post('/api/users/:walletAddress/projects', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const { name, description, url, githubUrl, category, status, tags, gradient } = req.body;
+        
+        if (!name || !description) {
+            return res.status(400).json({ message: 'Name and description are required' });
+        }
+        
+        const project = new Project({
+            walletAddress,
+            name,
+            description,
+            url,
+            githubUrl,
+            category,
+            status,
+            tags,
+            gradient
+        });
+        
+        await project.save();
+        res.status(201).json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error creating project', error: error.message });
+    }
+});
+
+// @desc    Update user project
+// @route   PUT /api/users/:walletAddress/projects/:projectId
+app.put('/api/users/:walletAddress/projects/:projectId', async (req, res) => {
+    try {
+        const { name, description, url, githubUrl, category, status, tags, gradient } = req.body;
+        
+        const project = await Project.findById(req.params.projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        
+        if (name !== undefined) project.name = name;
+        if (description !== undefined) project.description = description;
+        if (url !== undefined) project.url = url;
+        if (githubUrl !== undefined) project.githubUrl = githubUrl;
+        if (category !== undefined) project.category = category;
+        if (status !== undefined) project.status = status;
+        if (tags !== undefined) project.tags = tags;
+        if (gradient !== undefined) project.gradient = gradient;
+        
+        await project.save();
+        res.json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating project', error: error.message });
+    }
+});
+
+// @desc    Delete user project
+// @route   DELETE /api/users/:walletAddress/projects/:projectId
+app.delete('/api/users/:walletAddress/projects/:projectId', async (req, res) => {
+    try {
+        const project = await Project.findByIdAndDelete(req.params.projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        res.json({ success: true, message: 'Project deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error deleting project', error: error.message });
+    }
+});
+
+// Admin Panel extra routes
+
+// @desc    Get all users (Admin)
+// @route   GET /api/admin/users
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await User.find().sort({ createdAt: -1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching admin users', error: error.message });
+    }
+});
+
+// @desc    Toggle block status of a user
+// @route   PUT /api/admin/users/:id/block
+app.put('/api/admin/users/:id/block', async (req, res) => {
+    try {
+        const { isBlocked } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.isBlocked = isBlocked;
+        await user.save();
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user block status', error: error.message });
+    }
+});
+
+// @desc    Toggle verify status of a user
+// @route   PUT /api/admin/users/:id/verify
+app.put('/api/admin/users/:id/verify', async (req, res) => {
+    try {
+        const { isVerified } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.isVerified = isVerified;
+        await user.save();
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user verify status', error: error.message });
+    }
+});
+
+// @desc    Get all user projects (Admin)
+// @route   GET /api/admin/projects
+app.get('/api/admin/projects', async (req, res) => {
+    try {
+        const projects = await Project.find().sort({ createdAt: -1 });
+        res.json(projects);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching admin projects', error: error.message });
+    }
+});
+
+// @desc    Create project (Admin)
+// @route   POST /api/admin/projects
+app.post('/api/admin/projects', async (req, res) => {
+    try {
+        const { walletAddress, name, description, url, githubUrl, category, status, tags, gradient } = req.body;
+        if (!walletAddress || !name || !description) {
+            return res.status(400).json({ message: 'Wallet address, name, and description are required' });
+        }
+        const project = new Project({
+            walletAddress: walletAddress.toLowerCase(),
+            name, description, url, githubUrl, category, status, tags, gradient
+        });
+        await project.save();
+        res.status(201).json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error creating project', error: error.message });
+    }
+});
+
+// @desc    Update project (Admin)
+// @route   PUT /api/admin/projects/:id
+app.put('/api/admin/projects/:id', async (req, res) => {
+    try {
+        const { walletAddress, name, description, url, githubUrl, category, status, tags, gradient } = req.body;
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        
+        if (walletAddress !== undefined) project.walletAddress = walletAddress.toLowerCase();
+        if (name !== undefined) project.name = name;
+        if (description !== undefined) project.description = description;
+        if (url !== undefined) project.url = url;
+        if (githubUrl !== undefined) project.githubUrl = githubUrl;
+        if (category !== undefined) project.category = category;
+        if (status !== undefined) project.status = status;
+        if (tags !== undefined) project.tags = tags;
+        if (gradient !== undefined) project.gradient = gradient;
+        
+        await project.save();
+        res.json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating project', error: error.message });
+    }
+});
+
+// @desc    Delete project (Admin)
+// @route   DELETE /api/admin/projects/:id
+app.delete('/api/admin/projects/:id', async (req, res) => {
+    try {
+        const project = await Project.findByIdAndDelete(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.json({ success: true, message: 'Project deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error deleting project', error: error.message });
     }
 });
 

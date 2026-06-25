@@ -12,6 +12,10 @@ const scamReportSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    scammerWalletAddress: {
+        type: String,
+        trim: true
+    },
     scamType: {
         type: String,
         required: true,

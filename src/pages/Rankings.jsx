@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Flame, Calendar, Star, ArrowUpRight, Award } from 'lucide-react';
+import { Trophy, Flame, Calendar, Star, ArrowUpRight, Award, MessageSquare } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import Breadcrumb from '../components/common/Breadcrumb';
 import { getRankings } from '../services/api';
 import Badge from '../components/common/Badge';
 
 const Rankings = () => {
-    const [rankings, setRankings] = useState({ topRated: [], trending: [], newListings: [] });
+    const [rankings, setRankings] = useState({ topRated: [], trending: [], mostReviewed: [], newListings: [] });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('topRated'); // 'topRated' | 'trending' | 'newListings'
+    const [activeTab, setActiveTab] = useState('topRated'); // 'topRated' | 'trending' | 'mostReviewed' | 'newListings'
 
     useEffect(() => {
         const fetchRankings = async () => {
@@ -71,6 +71,7 @@ const Rankings = () => {
     const getActiveList = () => {
         if (activeTab === 'topRated') return rankings.topRated;
         if (activeTab === 'trending') return rankings.trending;
+        if (activeTab === 'mostReviewed') return rankings.mostReviewed;
         return rankings.newListings;
     };
 
@@ -98,24 +99,31 @@ const Rankings = () => {
                     </div>
 
                     {/* Tabs navigation */}
-                    <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-200/60 max-w-lg mb-10">
+                    <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-200/60 max-w-3xl mb-10 overflow-x-auto">
                         <button
                             onClick={() => setActiveTab('topRated')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'topRated' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                            className={`flex-1 flex min-w-max px-4 items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'topRated' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                         >
                             <Trophy className={`w-5 h-5 ${activeTab === 'topRated' ? 'text-primary fill-primary/10' : ''}`} />
                             <span>Top Rated</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('trending')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'trending' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                            className={`flex-1 flex min-w-max px-4 items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'trending' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                         >
                             <Flame className={`w-5 h-5 ${activeTab === 'trending' ? 'text-primary fill-primary/10' : ''}`} />
                             <span>Trending</span>
                         </button>
                         <button
+                            onClick={() => setActiveTab('mostReviewed')}
+                            className={`flex-1 flex min-w-max px-4 items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'mostReviewed' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                        >
+                            <MessageSquare className={`w-5 h-5 ${activeTab === 'mostReviewed' ? 'text-primary fill-primary/10' : ''}`} />
+                            <span>Most Reviewed</span>
+                        </button>
+                        <button
                             onClick={() => setActiveTab('newListings')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'newListings' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                            className={`flex-1 flex min-w-max px-4 items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all duration-300 ${activeTab === 'newListings' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
                         >
                             <Calendar className={`w-5 h-5 ${activeTab === 'newListings' ? 'text-primary fill-primary/10' : ''}`} />
                             <span>New Listings</span>
@@ -152,7 +160,11 @@ const Rankings = () => {
                                             </tr>
                                         ) : (
                                             currentList.map((site, index) => {
-                                                const logoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=96&background=0D6EFD&color=fff&bold=true`;
+                                                let domain = '';
+                                                try {
+                                                    domain = new URL(site.url).hostname.replace('www.', '');
+                                                } catch (e) {}
+                                                const logoUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=96&background=0D6EFD&color=fff&bold=true`;
                                                 return (
                                                     <tr key={site.id} className="hover:bg-slate-50/50 transition-colors duration-200">
                                                         {/* Rank */}
@@ -166,7 +178,7 @@ const Rankings = () => {
                                                                 <img
                                                                     src={logoUrl}
                                                                     alt={site.name}
-                                                                    className="w-10 h-10 rounded-xl object-cover shadow-sm flex-shrink-0"
+                                                                    className="w-10 h-10 rounded-xl object-contain bg-white p-0.5 shadow-sm flex-shrink-0"
                                                                 />
                                                                 <div>
                                                                     <Link to={`/website/${site.slug}`} className="font-bold text-text-main hover:text-primary transition-colors text-base block">

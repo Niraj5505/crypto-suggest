@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import * as LucideIcons from 'lucide-react';
 import { Search, Shield, TrendingUp, Users, ArrowRight, Check, Star, Zap, Globe, Lock, AlertTriangle } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import Card from '../components/common/Card';
@@ -55,14 +56,6 @@ const Home = () => {
     return (
         <PageLayout>
             <div className="overflow-hidden">
-                {scamWebsites.length > 0 && (
-                    <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white py-4 px-4 text-center font-bold text-sm flex items-center justify-center gap-2 mt-20 relative z-30 shadow-md">
-                        <AlertTriangle className="w-5 h-5 flex-shrink-0 animate-pulse" />
-                        <span>
-                            ⚠️ SECURITY ALERT: Confirmed scams detected on {scamWebsites.map(s => s.name).join(', ')}. Please avoid interacting with these platforms.
-                        </span>
-                    </div>
-                )}
                 {/* Hero Section - Split Screen Modern Layout */}
                 <section className="relative min-h-screen flex items-center py-24 sm:py-28 lg:py-0 overflow-hidden bg-[#FAFBFF]">
                     {/* Background Elements */}
@@ -212,8 +205,11 @@ const Home = () => {
                                             <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 sm:mb-6 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative z-10`}>
-                                                {/* We'd ideally map icons dynamically, simplified here for now */}
-                                                <Star className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                                                <img 
+                                                    src={`https://www.google.com/s2/favicons?domain=${category.brandDomain}&sz=128`}
+                                                    alt={category.name}
+                                                    className="w-7 h-7 sm:w-9 sm:h-9 object-contain bg-white rounded-lg p-1 shadow-sm"
+                                                />
                                             </div>
 
                                             <h3 className="text-lg sm:text-xl font-bold text-text-main mb-2 group-hover:text-primary transition-colors relative z-10">{category.name}</h3>

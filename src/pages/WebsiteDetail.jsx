@@ -170,9 +170,16 @@ const WebsiteDetail = () => {
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ delay: 0.1 }}
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(website.name)}&size=128&background=0D6EFD&color=fff&bold=true`}
+                                    src={(() => {
+                                        try {
+                                            const domain = new URL(website.url).hostname.replace('www.', '');
+                                            return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : `https://ui-avatars.com/api/?name=${encodeURIComponent(website.name)}&size=128&background=0D6EFD&color=fff&bold=true`;
+                                        } catch (e) {
+                                            return `https://ui-avatars.com/api/?name=${encodeURIComponent(website.name)}&size=128&background=0D6EFD&color=fff&bold=true`;
+                                        }
+                                    })()}
                                     alt={website.name}
-                                    className="w-32 h-32 rounded-3xl object-cover shadow-2xl border-4 border-white"
+                                    className="w-32 h-32 rounded-3xl object-contain bg-white p-2 shadow-2xl border-4 border-white"
                                 />
                                 <div className="flex-1">
                                     <h1 className="text-4xl md:text-5xl font-bold text-text-main mb-3">{website.name}</h1>
@@ -474,9 +481,16 @@ const WebsiteDetail = () => {
                                         <Link key={site.id} to={`/website/${site.slug}`} className="block group">
                                             <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center gap-3 transition-all hover:shadow-md hover:border-primary/30">
                                                 <img
-                                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=64&background=random`}
+                                                    src={(() => {
+                                                        try {
+                                                            const domain = new URL(site.url).hostname.replace('www.', '');
+                                                            return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=64&background=random`;
+                                                        } catch (e) {
+                                                            return `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=64&background=random`;
+                                                        }
+                                                    })()}
                                                     alt={site.name}
-                                                    className="w-10 h-10 rounded-lg"
+                                                    className="w-10 h-10 rounded-lg object-contain bg-white p-0.5"
                                                 />
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="font-bold text-text-main truncate group-hover:text-primary transition-colors">{site.name}</h4>

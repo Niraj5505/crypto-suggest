@@ -4,6 +4,7 @@ import { Menu, X, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
 import ConnectWalletButton from '../wallet/ConnectWalletButton';
+import logoSrc from '../../assets/logo.png';
 
 const Header = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,22 +46,8 @@ const Header = () => {
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2.5 group relative z-50 select-none">
                             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 300 }}>
-                                {/* Hexagonal CS Icon SVG */}
-                                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
-                                    <defs>
-                                        <linearGradient id="hexGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                                            <stop offset="0%" stopColor="#60a5fa" />
-                                            <stop offset="100%" stopColor="#1d4ed8" />
-                                        </linearGradient>
-                                    </defs>
-                                    {/* Outer hexagon */}
-                                    <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" stroke="url(#hexGrad)" strokeWidth="2.2" fill="none" strokeLinejoin="round"/>
-                                    {/* Inner hexagon */}
-                                    <path d="M20 7L31 13.5V26.5L20 33L9 26.5V13.5L20 7Z" stroke="url(#hexGrad)" strokeWidth="1.4" fill="none" strokeLinejoin="round" opacity="0.5"/>
-                                    {/* CS letter mark */}
-                                    <path d="M24 14.5C22.5 13.2 20.5 13 19 13.5C16.5 14.5 15 17 15 20C15 23 16.8 25.5 19.5 26.5C21 27 23 26.8 24.5 25.8" stroke="url(#hexGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
-                                    <path d="M18 20H24" stroke="url(#hexGrad)" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
+                                {/* Brand Logo */}
+                                <img src={logoSrc} alt="Crypto Suggest Logo" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 object-contain" />
                             </motion.div>
                             {/* Wordmark */}
                             <span className="text-[15px] sm:text-[17px] font-black tracking-widest uppercase leading-none" style={{ color: '#1e3a5f', letterSpacing: '0.12em' }}>

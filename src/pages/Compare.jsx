@@ -123,9 +123,16 @@ const Compare = () => {
                                                 <div className="relative mb-4 group">
                                                     <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                                     <img
-                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=80&background=random`}
+                                                        src={(() => {
+                                                            try {
+                                                                const domain = new URL(site.url).hostname.replace('www.', '');
+                                                                return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=80&background=random`;
+                                                            } catch (e) {
+                                                                return `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=80&background=random`;
+                                                            }
+                                                        })()}
                                                         alt={site.name}
-                                                        className="w-20 h-20 rounded-2xl shadow-lg relative z-10 transform group-hover:scale-105 transition-transform duration-300"
+                                                        className="w-20 h-20 rounded-2xl shadow-lg relative z-10 transform group-hover:scale-105 transition-transform duration-300 object-contain bg-white p-1"
                                                     />
                                                 </div>
                                                 <h3 className="text-xl font-bold text-center mb-1 text-gray-900">{site.name}</h3>

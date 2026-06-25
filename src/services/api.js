@@ -142,11 +142,12 @@ export const getRankings = async () => {
         return {
             topRated: data.topRated.map(mapWebsite),
             trending: data.trending.map(mapWebsite),
+            mostReviewed: data.mostReviewed ? data.mostReviewed.map(mapWebsite) : [],
             newListings: data.newListings.map(mapWebsite)
         };
     } catch (error) {
         console.error('Error fetching rankings:', error);
-        return { topRated: [], trending: [], newListings: [] };
+        return { topRated: [], trending: [], mostReviewed: [], newListings: [] };
     }
 };
 
@@ -236,6 +237,40 @@ export const deleteReview = async (id) => {
         return await response.json();
     } catch (error) {
         console.error(`Error deleting review (${id}):`, error);
+        throw error;
+    }
+};
+
+export const updateUserBlockStatus = async (id, isBlocked) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/users/${id}/block`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isBlocked }),
+        });
+        if (!response.ok) throw new Error('Failed to update user block status');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error updating user block status (${id}):`, error);
+        throw error;
+    }
+};
+
+export const updateUserVerifyStatus = async (id, isVerified) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/users/${id}/verify`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isVerified }),
+        });
+        if (!response.ok) throw new Error('Failed to update user verify status');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error updating user verify status (${id}):`, error);
         throw error;
     }
 };
@@ -338,3 +373,192 @@ export const updateUserProfile = async (profileData) => {
     return data;
 };
 
+export const getMyScamReports = async (walletAddress) => {
+    try {
+        const response = await fetch(`${API_URL}/scam-reports/my-reports?walletAddress=${encodeURIComponent(walletAddress)}`);
+        if (!response.ok) throw new Error('Failed to fetch your scam reports');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching my scam reports:', error);
+        return [];
+    }
+};
+
+// ==========================================
+// DB-backed User & Project API Requests
+// ==========================================
+
+export const getDbUser = async (walletAddress) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}`);
+        if (!response.ok) throw new Error('Failed to fetch DB user profile');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching DB user:', error);
+        return null;
+    }
+};
+
+export const updateDbUser = async (walletAddress, profileData) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profileData)
+        });
+        if (!response.ok) throw new Error('Failed to update DB user profile');
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating DB user:', error);
+        throw error;
+    }
+};
+
+export const updateDbUserSubscription = async (walletAddress, planId, subscribedAt) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/subscription`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planId, subscribedAt })
+        });
+        if (!response.ok) throw new Error('Failed to update DB user subscription');
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating DB user subscription:', error);
+        throw error;
+    }
+};
+
+export const getUserReviews = async (walletAddress) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/reviews`);
+        if (!response.ok) throw new Error('Failed to fetch user reviews');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user reviews:', error);
+        return [];
+    }
+};
+
+export const getDbUserProjects = async (walletAddress) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/projects`);
+        if (!response.ok) throw new Error('Failed to fetch DB user projects');
+        const projects = await response.json();
+        return projects.map(p => ({ ...p, id: p._id || p.id }));
+    } catch (error) {
+        console.error('Error fetching DB user projects:', error);
+        return [];
+    }
+};
+
+export const addDbUserProject = async (walletAddress, projectData) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/projects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData)
+        });
+        if (!response.ok) throw new Error('Failed to create DB user project');
+        const project = await response.json();
+        return { ...project, id: project._id || project.id };
+    } catch (error) {
+        console.error('Error creating DB user project:', error);
+        throw error;
+    }
+};
+
+export const updateDbUserProject = async (walletAddress, projectId, projectData) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/projects/${projectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData)
+        });
+        if (!response.ok) throw new Error('Failed to update DB user project');
+        const project = await response.json();
+        return { ...project, id: project._id || project.id };
+    } catch (error) {
+        console.error('Error updating DB user project:', error);
+        throw error;
+    }
+};
+
+export const deleteDbUserProject = async (walletAddress, projectId) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/projects/${projectId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete DB user project');
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting DB user project:', error);
+        throw error;
+    }
+};
+
+export const getAdminUsers = async () => {
+    try {
+        const response = await fetch(`${API_URL}/admin/users`);
+        if (!response.ok) throw new Error('Failed to fetch admin users');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching admin users:', error);
+        return [];
+    }
+};
+
+export const getAdminProjects = async () => {
+    try {
+        const response = await fetch(`${API_URL}/admin/projects`);
+        if (!response.ok) throw new Error('Failed to fetch admin projects');
+        const projects = await response.json();
+        return projects.map(p => ({ ...p, id: p._id || p.id }));
+    } catch (error) {
+        console.error('Error fetching admin projects:', error);
+        return [];
+    }
+};
+
+export const createAdminProject = async (projectData) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/projects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData),
+        });
+        if (!response.ok) throw new Error('Failed to create admin project');
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating admin project:', error);
+        throw error;
+    }
+};
+
+export const updateAdminProject = async (id, projectData) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/projects/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData),
+        });
+        if (!response.ok) throw new Error('Failed to update admin project');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error updating admin project (${id}):`, error);
+        throw error;
+    }
+};
+
+export const deleteAdminProject = async (id) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/projects/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete admin project');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error deleting admin project (${id}):`, error);
+        throw error;
+    }
+};

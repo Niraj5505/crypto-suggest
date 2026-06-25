@@ -32,9 +32,16 @@ const CompareBar = () => {
                                 <div key={site.id} className="relative group flex-shrink-0">
                                     <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm pr-8">
                                         <img
-                                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=32&background=random`}
+                                            src={(() => {
+                                                try {
+                                                    const domain = new URL(site.url).hostname.replace('www.', '');
+                                                    return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=32&background=random`;
+                                                } catch (e) {
+                                                    return `https://ui-avatars.com/api/?name=${encodeURIComponent(site.name)}&size=32&background=random`;
+                                                }
+                                            })()}
                                             alt={site.name}
-                                            className="w-5 h-5 rounded flex-shrink-0"
+                                            className="w-5 h-5 rounded flex-shrink-0 object-contain bg-white"
                                         />
                                         <span className="text-sm font-medium truncate max-w-[80px]">{site.name}</span>
                                     </div>

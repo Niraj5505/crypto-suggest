@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 
 const WalletConnectionModal = ({ isOpen, onClose }) => {
     const { connectWallet } = useWallet();
+    const navigate = useNavigate();
     const [isConnecting, setIsConnecting] = useState(false);
     const [selectedWallet, setSelectedWallet] = useState(null);
 
@@ -35,8 +37,13 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
         setIsConnecting(true);
 
         try {
-            await connectWallet(walletType);
-            onClose();
+            const result = await connectWallet(walletType);
+            if (result?.success) {
+                onClose();
+                navigate('/dashboard');
+            } else {
+                onClose();
+            }
         } catch (error) {
             console.error('Connection failed:', error);
         } finally {

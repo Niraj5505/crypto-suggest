@@ -18,6 +18,7 @@ import ScrollToTop from './components/common/ScrollToTop';
 
 import Admin from './pages/Admin';
 import Rankings from './pages/Rankings';
+import Dashboard from './pages/Dashboard';
 function App() {
     return (
         <WalletProvider>
@@ -39,6 +40,7 @@ function App() {
                                     <Route path="/bookmarks" element={<Bookmarks />} />
                                     <Route path="/admin" element={<Admin />} />
                                     <Route path="/rankings" element={<Rankings />} />
+                                    <Route path="/dashboard" element={<Dashboard />} />
                                     <Route path="*" element={<NotFound />} />
                                 </Routes>
                             <CompareBar />

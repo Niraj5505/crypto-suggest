@@ -24,6 +24,10 @@ const categorySchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    brandDomain: {
+        type: String,
+        trim: true
+    },
     subCategories: [{
         type: String
     }],

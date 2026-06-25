@@ -7,7 +7,12 @@ import { useCompare } from '../../contexts/CompareContext';
 import { useBookmark } from '../../contexts/BookmarkContext';
 
 const WebsiteCard = ({ website, viewMode = 'grid', className = '' }) => {
-    const logoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(website.name)}&size=128&background=0D6EFD&color=fff&bold=true`;
+    let domain = '';
+    try {
+        domain = new URL(website.url).hostname.replace('www.', '');
+    } catch (e) {}
+    const primaryLogo = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '';
+    const fallbackLogo = `https://ui-avatars.com/api/?name=${encodeURIComponent(website.name)}&size=128&background=0D6EFD&color=fff&bold=true`;
 
     const getCategoryColor = (category) => {
         // Simple hash to pick a color
@@ -46,9 +51,10 @@ const WebsiteCard = ({ website, viewMode = 'grid', className = '' }) => {
         return (
             <div className={`bg-slate-50 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 hover:shadow-xl hover:border-primary/20 transition-all duration-300 flex flex-col sm:flex-row gap-4 sm:gap-6 group ${className}`}>
                 <img
-                    src={logoUrl}
+                    src={primaryLogo || fallbackLogo}
+                    onError={(e) => { e.target.onerror = null; e.target.src = fallbackLogo; }}
                     alt={website.name}
-                    className="w-20 h-20 sm:w-24 sm:h-24 mx-auto sm:mx-0 rounded-2xl object-cover shadow-lg group-hover:scale-105 transition-transform duration-300"
+                    className="w-20 h-20 sm:w-24 sm:h-24 mx-auto sm:mx-0 rounded-2xl object-contain bg-white p-1 shadow-lg group-hover:scale-105 transition-transform duration-300"
                 />
 
                 <div className="flex-1 min-w-0">
@@ -113,9 +119,10 @@ const WebsiteCard = ({ website, viewMode = 'grid', className = '' }) => {
                 <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <img
-                            src={logoUrl}
+                            src={primaryLogo || fallbackLogo}
+                            onError={(e) => { e.target.onerror = null; e.target.src = fallbackLogo; }}
                             alt={website.name}
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform flex-shrink-0"
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-contain bg-white p-0.5 shadow-sm group-hover:scale-105 transition-transform flex-shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                             <h3 className="font-bold text-base sm:text-lg text-text-main group-hover:text-primary transition-colors truncate">{website.name}</h3>
