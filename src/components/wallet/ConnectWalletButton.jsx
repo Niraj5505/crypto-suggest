@@ -62,7 +62,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                         className="fixed inset-0 z-10"
                         onClick={() => setIsDropdownOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-fade-in">
+                    <div className={`absolute right-0 ${isMobile ? 'left-0 w-full' : 'w-64'} mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-fade-in`}>
                         <div className="p-4 border-b border-gray-100">
                             <div className="text-xs text-text-muted mb-1">Logged in as</div>
                             <div className="font-bold text-sm text-text-main break-all">
