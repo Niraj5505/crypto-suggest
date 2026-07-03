@@ -628,12 +628,12 @@ const Dashboard = () => {
                     </div>
 
                     {/* ── Tabs ── */}
-                    <div className="flex items-center gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-8 w-fit">
+                    <div className="flex items-center gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-8 max-w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         {TABS.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex-shrink-0 ${
                                     activeTab === tab.id
                                         ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-md'
                                         : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
