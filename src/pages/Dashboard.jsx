@@ -458,6 +458,7 @@ const Dashboard = () => {
             setTimeout(() => setProjectSaved(false), 3000);
         } catch (err) {
             console.error('Failed to save project:', err);
+            alert('Failed to save project: ' + (err.message || 'Connection error. Please try again.'));
         }
     };
 
