@@ -76,23 +76,6 @@ const ConnectWalletButton = ({ className = "" }) => {
                         </Link>
 
                         <button
-                            onClick={handleCopyAddress}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
-                        >
-                            {copied ? (
-                                <>
-                                    <Check className="w-4 h-4 text-green-600" />
-                                    <span className="text-green-600 font-medium">Copied!</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Copy className="w-4 h-4 text-text-muted" />
-                                    <span className="text-text-main">Copy Wallet ID</span>
-                                </>
-                            )}
-                        </button>
-
-                        <button
                             onClick={handleDisconnect}
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 transition-colors text-left border-t border-gray-100"
                         >
