@@ -126,13 +126,15 @@ const WebsiteCard = ({ website, viewMode = 'grid', className = '' }) => {
                         />
                         <div className="min-w-0 flex-1">
                             <h3 className="font-bold text-base sm:text-lg text-text-main group-hover:text-primary transition-colors truncate">{website.name}</h3>
-                            <div className="flex items-center gap-1 text-xs font-medium text-text-muted">
-                                <Star className="w-3 h-3 text-yellow-400 fill-current flex-shrink-0" />
-                                <span>{website.rating}</span>
-                                <span className="mx-1">•</span>
-                                <span className="truncate">{website.reviewCount} reviews</span>
-                                <span className="mx-1">•</span>
-                                <span className="truncate">{website.views?.toLocaleString() || website.views} views</span>
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-text-muted">
+                                <span className="flex items-center gap-1 flex-shrink-0">
+                                    <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                                    {website.rating}
+                                </span>
+                                <span className="text-gray-300">•</span>
+                                <span className="flex-shrink-0">{website.reviewCount} reviews</span>
+                                <span className="text-gray-300">•</span>
+                                <span className="flex-shrink-0">{website.views?.toLocaleString() || website.views} views</span>
                             </div>
                         </div>
                     </div>
