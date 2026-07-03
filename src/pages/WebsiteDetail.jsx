@@ -310,37 +310,40 @@ const WebsiteDetail = () => {
                                     <p className="text-text-muted leading-relaxed whitespace-pre-line">{website.longDescription}</p>
                                 </Card>
 
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <Card className="bg-green-50/50 border-green-100">
-                                        <h3 className="font-bold text-green-800 mb-4 flex items-center gap-2 text-lg">
-                                            <div className="p-1 bg-green-200 rounded-full"><Check className="w-4 h-4 text-green-700" /></div>
-                                            Pros
-                                        </h3>
-                                        <ul className="space-y-3">
-                                            {website.pros.map((pro, i) => (
-                                                <li key={i} className="flex items-start gap-3 text-sm font-medium text-gray-700">
-                                                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                                    <span>{pro}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </Card>
+                                {/* Pros & Cons - Hidden for now */}
+                                {false && (
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <Card className="bg-green-50/50 border-green-100">
+                                            <h3 className="font-bold text-green-800 mb-4 flex items-center gap-2 text-lg">
+                                                <div className="p-1 bg-green-200 rounded-full"><Check className="w-4 h-4 text-green-700" /></div>
+                                                Pros
+                                            </h3>
+                                            <ul className="space-y-3">
+                                                {website.pros.map((pro, i) => (
+                                                    <li key={i} className="flex items-start gap-3 text-sm font-medium text-gray-700">
+                                                        <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                                        <span>{pro}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </Card>
 
-                                    <Card className="bg-red-50/50 border-red-100">
-                                        <h3 className="font-bold text-red-800 mb-4 flex items-center gap-2 text-lg">
-                                            <div className="p-1 bg-red-200 rounded-full"><X className="w-4 h-4 text-red-700" /></div>
-                                            Cons
-                                        </h3>
-                                        <ul className="space-y-3">
-                                            {website.cons.map((con, i) => (
-                                                <li key={i} className="flex items-start gap-3 text-sm font-medium text-gray-700">
-                                                    <X className="w-5 h-5 text-red-500 flex-shrink-0" />
-                                                    <span>{con}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </Card>
-                                </div>
+                                        <Card className="bg-red-50/50 border-red-100">
+                                            <h3 className="font-bold text-red-800 mb-4 flex items-center gap-2 text-lg">
+                                                <div className="p-1 bg-red-200 rounded-full"><X className="w-4 h-4 text-red-700" /></div>
+                                                Cons
+                                            </h3>
+                                            <ul className="space-y-3">
+                                                {website.cons.map((con, i) => (
+                                                    <li key={i} className="flex items-start gap-3 text-sm font-medium text-gray-700">
+                                                        <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                                        <span>{con}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </Card>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
