@@ -260,7 +260,7 @@ const TABS = [
 
 /* ─────────────────── MAIN COMPONENT ─────────────────── */
 const Dashboard = () => {
-    const { isConnected, walletAddress, walletType, connectedAt, getTruncatedAddress, disconnectWallet } = useWallet();
+    const { isConnected, walletAddress, walletType, connectedAt, getTruncatedAddress, disconnectWallet, user } = useWallet();
 
     /* subscription state */
     const [activePlan, setActivePlan]         = useState(() => loadSubscription(walletAddress));
@@ -1879,7 +1879,7 @@ const Dashboard = () => {
                             rankGlow = 'ring-2 ring-amber-500/40 bg-amber-50/30';
                         }
 
-                        const refLink = `${window.location.origin}?ref=${walletAddress}`;
+                        const refLink = `${window.location.origin}?ref=${user?.referralCode || walletAddress}`;
 
                         const copyToClipboard = () => {
                             navigator.clipboard.writeText(refLink);

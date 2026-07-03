@@ -464,6 +464,15 @@ app.delete('/api/admin/reviews/:id', async (req, res) => {
 // User Profile & Project API Routes
 // =========================================================================
 
+const generateReferralCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+};
+
 // @desc    Get user profile (creates if not exists)
 // @route   GET /api/users/:walletAddress
 app.get('/api/users/:walletAddress', async (req, res) => {
@@ -472,22 +481,39 @@ app.get('/api/users/:walletAddress', async (req, res) => {
         let user = await User.findOne({ walletAddress });
         if (!user) {
             // Check for a referrer code
-            const referrerAddress = req.query.ref ? req.query.ref.toLowerCase().trim() : null;
+            const referrerAddress = req.query.ref ? req.query.ref.trim() : null;
             let referredBy = null;
             
-            if (referrerAddress && referrerAddress !== walletAddress) {
-                const referrer = await User.findOne({ walletAddress: referrerAddress });
+            if (referrerAddress && referrerAddress.toLowerCase() !== walletAddress) {
+                const referrer = await User.findOne({
+                    $or: [
+                        { referralCode: referrerAddress.toUpperCase() },
+                        { walletAddress: referrerAddress.toLowerCase() },
+                        { username: referrerAddress.toLowerCase() }
+                    ]
+                });
                 if (referrer) {
-                    referredBy = referrerAddress;
+                    referredBy = referrer.walletAddress;
                     referrer.referralCount = (referrer.referralCount || 0) + 1;
                     await referrer.save();
                 }
             }
             
+            const referralCode = generateReferralCode();
             user = new User({ 
                 walletAddress,
-                referredBy
+                referredBy,
+                referralCode
             });
+            await user.save();
+        } else if (!user.referralCode) {
+            let referralCode = generateReferralCode();
+            let codeExists = await User.exists({ referralCode });
+            while (codeExists) {
+                referralCode = generateReferralCode();
+                codeExists = await User.exists({ referralCode });
+            }
+            user.referralCode = referralCode;
             await user.save();
         }
         res.json(user);
@@ -873,15 +899,24 @@ app.post('/api/auth/register', async (req, res) => {
 
         const walletAddress = generateMockWallet(username.toLowerCase().trim());
 
+        // Generate unique referralCode
+        let referralCode = generateReferralCode();
+        let codeExists = await User.exists({ referralCode });
+        while (codeExists) {
+            referralCode = generateReferralCode();
+            codeExists = await User.exists({ referralCode });
+        }
+
         // Check for referredBy logic (referrals system)
         let referredBy = null;
         if (referrer) {
-            const referrerAddress = referrer.toLowerCase().trim();
+            const referrerAddress = referrer.trim();
             const referrerUser = await User.findOne({
                 $or: [
-                    { walletAddress: referrerAddress },
-                    { username: referrerAddress },
-                    { email: referrerAddress }
+                    { referralCode: referrerAddress.toUpperCase() },
+                    { walletAddress: referrerAddress.toLowerCase() },
+                    { username: referrerAddress.toLowerCase() },
+                    { email: referrerAddress.toLowerCase() }
                 ]
             });
             if (referrerUser && referrerUser.walletAddress !== walletAddress) {
@@ -898,7 +933,8 @@ app.post('/api/auth/register', async (req, res) => {
             mobile: mobile.trim(),
             password: hashedPassword,
             displayName: username,
-            referredBy
+            referredBy,
+            referralCode
         });
 
         await newUser.save();
@@ -919,7 +955,8 @@ app.post('/api/auth/register', async (req, res) => {
                 username: newUser.username,
                 email: newUser.email,
                 mobile: newUser.mobile,
-                displayName: newUser.displayName
+                displayName: newUser.displayName,
+                referralCode: newUser.referralCode
             }
         });
     } catch (error) {
@@ -965,6 +1002,18 @@ app.post('/api/auth/login', async (req, res) => {
             { expiresIn: '30d' }
         );
 
+        // Ensure referralCode exists for legacy users logging in
+        if (!user.referralCode) {
+            let referralCode = generateReferralCode();
+            let codeExists = await User.exists({ referralCode });
+            while (codeExists) {
+                referralCode = generateReferralCode();
+                codeExists = await User.exists({ referralCode });
+            }
+            user.referralCode = referralCode;
+            await user.save();
+        }
+
         res.json({
             success: true,
             token,
@@ -975,7 +1024,8 @@ app.post('/api/auth/login', async (req, res) => {
                 email: user.email,
                 mobile: user.mobile,
                 displayName: user.displayName,
-                subscribedPlan: user.subscribedPlan
+                subscribedPlan: user.subscribedPlan,
+                referralCode: user.referralCode
             }
         });
     } catch (error) {
