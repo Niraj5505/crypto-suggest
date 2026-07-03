@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import WebsiteDetail from './pages/WebsiteDetail';
@@ -19,6 +19,19 @@ import ScrollToTop from './components/common/ScrollToTop';
 import Admin from './pages/Admin';
 import Rankings from './pages/Rankings';
 import Dashboard from './pages/Dashboard';
+
+const ReferralHandler = () => {
+    const location = useLocation();
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const ref = params.get('ref');
+        if (ref) {
+            localStorage.setItem('cs_referred_by', ref.trim());
+        }
+    }, [location]);
+    return null;
+};
+
 function App() {
     return (
         <WalletProvider>
@@ -26,6 +39,7 @@ function App() {
                 <BookmarkProvider>
                     <Router>
                             <ScrollToTop />
+                            <ReferralHandler />
                             <div className="min-h-screen bg-background-soft font-sans text-text-main">
                                 <Routes>
                                     <Route path="/" element={<Home />} />

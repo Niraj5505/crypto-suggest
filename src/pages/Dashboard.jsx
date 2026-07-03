@@ -10,12 +10,12 @@ import {
     LayoutDashboard, Sparkles, AlertTriangle, Flag, Send,
     RefreshCw, Clock, Hash, Search, Plus, Info,
     Folder, Code2, Rocket, Tag, Trash2, PenLine, GitBranch,
-    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown, QrCode
+    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown
 } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import { useWallet } from '../contexts/WalletContext';
 import { useBookmark } from '../contexts/BookmarkContext';
-import { getWebsites, getMyScamReports, submitScamReport, getDbUser, updateDbUser, updateDbUserSubscription, getDbUserProjects, addDbUserProject, updateDbUserProject, deleteDbUserProject, getUserReviews, deleteReview } from '../services/api';
+import { getWebsites, getMyScamReports, submitScamReport, getDbUser, updateDbUser, updateDbUserSubscription, getDbUserProjects, addDbUserProject, updateDbUserProject, deleteDbUserProject, getUserReviews, deleteReview, getDbUserReferrals } from '../services/api';
 
 /* ─────────────────── tiny reusable atoms ─────────────────── */
 
@@ -248,25 +248,13 @@ function saveSubscription(addr, data) {
     localStorage.setItem(SUB_KEY(addr), JSON.stringify(data));
 }
 
-const BILLING_HISTORY_KEY = (addr) => `cs_billing_history_${addr}`;
-
-function loadBillingHistory(addr) {
-    if (!addr) return [];
-    try { return JSON.parse(localStorage.getItem(BILLING_HISTORY_KEY(addr)) || '[]'); }
-    catch { return []; }
-}
-
-function saveBillingHistory(addr, list) {
-    if (!addr) return;
-    localStorage.setItem(BILLING_HISTORY_KEY(addr), JSON.stringify(list));
-}
-
 const TABS = [
     { id: 'overview',      label: 'Overview',      icon: LayoutDashboard },
     { id: 'profile',       label: 'My Profile',    icon: User },
     { id: 'projects',      label: 'Projects',      icon: Folder },
     { id: 'reviews',       label: 'My Reviews',    icon: Star },
     { id: 'subscription',  label: 'Subscription',  icon: CreditCard },
+    { id: 'referrals',     label: 'Referrals',     icon: Users },
     { id: 'reports',       label: 'Scam Reports',  icon: AlertTriangle },
 ];
 
@@ -279,9 +267,6 @@ const Dashboard = () => {
     const [subConfirm, setSubConfirm]         = useState(null);  // plan id pending confirm
     const [subSuccess, setSubSuccess]         = useState(false);
     const [openFaq, setOpenFaq]               = useState(null);
-    const [qrVisible, setQrVisible]           = useState({});
-    const toggleQr = (key) => setQrVisible(prev => ({ ...prev, [key]: !prev[key] }));
-    const [billingHistory, setBillingHistory] = useState([]);
 
     /* project management state */
     const [projects, setProjects]               = useState([]);
@@ -292,6 +277,12 @@ const Dashboard = () => {
     const [projectErrors, setProjectErrors]     = useState({});
     const [deleteConfirm, setDeleteConfirm]     = useState(null); // id to confirm
     const [projectSaved, setProjectSaved]       = useState(false);
+    const [showSubRequiredModal, setShowSubRequiredModal] = useState(false);
+
+    /* referral state */
+    const [referrals, setReferrals]             = useState([]);
+    const [referralsLoading, setReferralsLoading] = useState(false);
+    const [copiedLink, setCopiedLink]           = useState(false);
 
     /* scam reports state */
     const [myReports, setMyReports]           = useState([]);
@@ -340,12 +331,16 @@ const Dashboard = () => {
             .finally(() => setLoadingSites(false));
     }, []);
 
-    /* load profile, subscription, and projects from database whenever wallet address is available */
+    /* load profile, subscription, referrals, and projects from database whenever wallet address is available */
     useEffect(() => {
         const loadDbData = async () => {
             if (!walletAddress) return;
             try {
-                const user = await getDbUser(walletAddress);
+                const storedRef = localStorage.getItem('cs_referred_by');
+                const user = await getDbUser(walletAddress, storedRef);
+                if (storedRef && user) {
+                    localStorage.removeItem('cs_referred_by');
+                }
                 if (user) {
                     const profileData = {
                         displayName: user.displayName || '',
@@ -377,6 +372,11 @@ const Dashboard = () => {
                 setProjects(projs);
                 const revs = await getUserReviews(walletAddress);
                 setMyReviews(revs);
+                
+                setReferralsLoading(true);
+                const refs = await getDbUserReferrals(walletAddress);
+                setReferrals(refs);
+                setReferralsLoading(false);
             } catch (err) {
                 console.error('Error loading data from database:', err);
             }
@@ -385,31 +385,11 @@ const Dashboard = () => {
         loadDbData();
     }, [walletAddress]);
 
-    /* load billing history and sync with active subscription */
-    useEffect(() => {
-        if (!walletAddress) {
-            setBillingHistory([]);
+    const openAddProject = () => {
+        if (!activePlan) {
+            setShowSubRequiredModal(true);
             return;
         }
-        let history = loadBillingHistory(walletAddress);
-        
-        // If history is empty but we have an activePlan, populate it!
-        if (history.length === 0 && activePlan) {
-            const plan = PLANS.find(p => p.id === activePlan.planId);
-            const initialTx = {
-                id: 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-                date: activePlan.subscribedAt || Date.now(),
-                planId: activePlan.planId,
-                price: activePlan.price || plan?.price || 199,
-                status: 'Paid'
-            };
-            history = [initialTx];
-            saveBillingHistory(walletAddress, history);
-        }
-        setBillingHistory(history);
-    }, [walletAddress, activePlan]);
-
-    const openAddProject = () => {
         setEditingProject(null);
         setProjectForm(BLANK_PROJECT);
         setProjectErrors({});
@@ -436,6 +416,10 @@ const Dashboard = () => {
 
     const handleProjectSave = async () => {
         if (!validateProject()) return;
+        if (!editingProject && !activePlan) {
+            setShowSubRequiredModal(true);
+            return;
+        }
         const tagsArr = projectForm.tags
             ? projectForm.tags.split(',').map(t => t.trim()).filter(Boolean)
             : [];
@@ -458,7 +442,6 @@ const Dashboard = () => {
             setTimeout(() => setProjectSaved(false), 3000);
         } catch (err) {
             console.error('Failed to save project:', err);
-            alert('Failed to save project: ' + (err.message || 'Connection error. Please try again.'));
         }
     };
 
@@ -668,6 +651,29 @@ const Dashboard = () => {
                                 </div>
                             )}
 
+                            {/* Subscription Notice Banner */}
+                            {!activePlan && (
+                                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fade-in">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 flex-shrink-0">
+                                            <CreditCard className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-base">Subscription Required</h4>
+                                            <p className="text-sm text-gray-600 mt-1 max-w-xl">
+                                                You do not have an active subscription plan. Please activate a subscription to start submitting and showcasing your blockchain or crypto projects.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setActiveTab('subscription')}
+                                        className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all text-sm whitespace-nowrap flex-shrink-0"
+                                    >
+                                        Activate Subscription 💎
+                                    </button>
+                                </div>
+                            )}
+
                             {/* ── Header ── */}
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
@@ -839,6 +845,70 @@ const Dashboard = () => {
                                 );
                             })()}
 
+                        </div>
+                    )}
+
+                    {/* ── Subscription Required Modal ── */}
+                    {showSubRequiredModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            {/* backdrop */}
+                            <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setShowSubRequiredModal(false)} />
+
+                            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in border border-gray-100">
+                                {/* Modal header */}
+                                <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-6 text-center text-white relative">
+                                    <button 
+                                        onClick={() => setShowSubRequiredModal(false)} 
+                                        className="absolute right-4 top-4 w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+                                    >
+                                        <X className="w-4 h-4 text-white" />
+                                    </button>
+                                    <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-3 border border-white/25 shadow-inner">
+                                        <CreditCard className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h3 className="font-black text-xl">Subscription Required 💎</h3>
+                                    <p className="text-white/80 text-xs mt-1">Unlock all premium developer features</p>
+                                </div>
+
+                                <div className="p-6 space-y-4">
+                                    <p className="text-sm text-gray-600 text-center font-medium leading-relaxed">
+                                        To add and showcase your crypto or blockchain projects, you need an active subscription plan.
+                                    </p>
+
+                                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+                                        <div className="flex items-center gap-2.5 text-xs text-slate-700 font-bold">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                            Showcase unlimited projects
+                                        </div>
+                                        <div className="flex items-center gap-2.5 text-xs text-slate-700 font-bold">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                            Access advanced developer stats
+                                        </div>
+                                        <div className="flex items-center gap-2.5 text-xs text-slate-700 font-bold">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                            Boost listing priority in search index
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <button
+                                            onClick={() => setShowSubRequiredModal(false)}
+                                            className="py-3 border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-50 transition-all text-center"
+                                        >
+                                            Maybe Later
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowSubRequiredModal(false);
+                                                setActiveTab('subscription');
+                                            }}
+                                            className="py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-center"
+                                        >
+                                            View Plans 🚀
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -1128,44 +1198,14 @@ const Dashboard = () => {
                                                     <div className="space-y-3">
                                                         <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left">
                                                             <p className="text-xs text-gray-700 font-bold mb-2">1. Send ${plan.price} (USDT/USDC/ETH/TRX) to:</p>
-                                                            <div className="space-y-3">
+                                                            <div className="space-y-2">
                                                                 <div>
-                                                                    <div className="flex items-center justify-between">
-                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">BEP20 (Binance Smart Chain)</p>
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => toggleQr(plan.id + '_bep20')}
-                                                                            className="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 flex items-center gap-0.5 transition-colors"
-                                                                        >
-                                                                            <QrCode className="w-3 h-3" /> {qrVisible[plan.id + '_bep20'] ? 'Hide QR' : 'Show QR'}
-                                                                        </button>
-                                                                    </div>
+                                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">ERC20 / BEP20 (ETH, BSC, Polygon)</p>
                                                                     <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>0x185018c5f26B2cE105e0B80b231178CE5913b621</p>
-                                                                    {qrVisible[plan.id + '_bep20'] && (
-                                                                        <div className="mt-2 flex flex-col items-center bg-white p-2.5 rounded-lg border border-gray-100 shadow-inner animate-fade-in">
-                                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=0x185018c5f26B2cE105e0B80b231178CE5913b621" alt="BEP20 QR Code" className="w-[120px] h-[120px] object-contain" />
-                                                                            <span className="text-[9px] text-gray-400 font-semibold mt-1">Scan for BEP20 payment</span>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="flex items-center justify-between">
-                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">TRC20 (Tron Network)</p>
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => toggleQr(plan.id + '_trc20')}
-                                                                            className="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 flex items-center gap-0.5 transition-colors"
-                                                                        >
-                                                                            <QrCode className="w-3 h-3" /> {qrVisible[plan.id + '_trc20'] ? 'Hide QR' : 'Show QR'}
-                                                                        </button>
-                                                                    </div>
+                                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">TRC20 (Tron)</p>
                                                                     <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ</p>
-                                                                    {qrVisible[plan.id + '_trc20'] && (
-                                                                        <div className="mt-2 flex flex-col items-center bg-white p-2.5 rounded-lg border border-gray-100 shadow-inner animate-fade-in">
-                                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ" alt="TRC20 QR Code" className="w-[120px] h-[120px] object-contain" />
-                                                                            <span className="text-[9px] text-gray-400 font-semibold mt-1">Scan for TRC20 payment</span>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1178,19 +1218,6 @@ const Dashboard = () => {
                                                                         await updateDbUserSubscription(walletAddress, plan.id, sub.subscribedAt);
                                                                         setActivePlan(sub);
                                                                         saveSubscription(walletAddress, sub);
-                                                                        
-                                                                        // Add to billing history
-                                                                        const newTx = {
-                                                                            id: 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-                                                                            date: sub.subscribedAt,
-                                                                            planId: plan.id,
-                                                                            price: plan.price,
-                                                                            status: 'Paid'
-                                                                        };
-                                                                        const updatedHistory = [newTx, ...billingHistory];
-                                                                        saveBillingHistory(walletAddress, updatedHistory);
-                                                                        setBillingHistory(updatedHistory);
-                                                                        
                                                                         setSubConfirm(null);
                                                                         setSubSuccess(true);
                                                                         setTimeout(() => setSubSuccess(false), 5000);
@@ -1248,80 +1275,64 @@ const Dashboard = () => {
                                 <h3 className="font-bold text-gray-900 text-base mb-4 flex items-center gap-2">
                                     <CreditCard className="w-4 h-4 text-indigo-500" /> Billing History
                                 </h3>
-                                {billingHistory.length > 0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="border-b border-gray-100">
-                                                    {['Transaction ID', 'Date', 'Plan', 'Amount', 'Status'].map(h => (
-                                                        <th key={h} className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider pb-3 pr-4">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {billingHistory.map((tx) => {
-                                                    const plan = PLANS.find(p => p.id === tx.planId);
-                                                    const txDate = new Date(tx.date);
-                                                    return (
-                                                        <tr key={tx.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                                                            <td className="py-3 pr-4 text-xs font-mono font-bold text-indigo-600">{tx.id}</td>
-                                                            <td className="py-3 pr-4 text-gray-600 font-medium text-xs">{txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                                            <td className="py-3 pr-4">
-                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white bg-gradient-to-r ${plan?.gradient || 'from-gray-500 to-gray-600'}`}>{plan?.name || 'Starter'}</span>
-                                                            </td>
-                                                            <td className="py-3 pr-4 font-bold text-gray-900 text-xs">${tx.price}.00</td>
-                                                            <td className="py-3">
-                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                                                    tx.status === 'Paid' 
-                                                                        ? 'text-green-700 bg-green-50 border-green-200' 
-                                                                        : 'text-gray-600 bg-gray-50 border-gray-200'
-                                                                }`}>
-                                                                    {tx.status === 'Paid' ? '✓ Paid' : 'Cancelled'}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                        
-                                        {activePlan && (() => {
-                                            const subDate = new Date(activePlan.subscribedAt);
-                                            const nextDate = new Date(subDate);
-                                            nextDate.setMonth(nextDate.getMonth() + 1);
-                                            return (
-                                                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                                    <p className="text-xs text-gray-500">Next billing: <span className="font-bold text-gray-800">{nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (!window.confirm('Are you sure you want to cancel your subscription?')) return;
-                                                            try {
-                                                                    await updateDbUserSubscription(walletAddress, null);
-                                                                    saveSubscription(walletAddress, null);
-                                                                    setActivePlan(null);
-                                                                    
-                                                                    // Update status in billing history
-                                                                    const updatedHistory = billingHistory.map(tx => {
-                                                                        if (tx.planId === activePlan.planId && tx.status === 'Paid') {
-                                                                            return { ...tx, status: 'Cancelled' };
-                                                                        }
-                                                                        return tx;
-                                                                    });
-                                                                    saveBillingHistory(walletAddress, updatedHistory);
-                                                                    setBillingHistory(updatedHistory);
-                                                            } catch (err) {
-                                                                console.error('Failed to cancel subscription:', err);
-                                                            }
-                                                        }}
-                                                        className="text-xs text-red-500 hover:text-red-700 font-bold hover:underline transition-colors"
-                                                    >
-                                                        Cancel Subscription
-                                                    </button>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                ) : (
+                                {activePlan ? (() => {
+                                    const plan = PLANS.find(p => p.id === activePlan.planId);
+                                    const subDate = new Date(activePlan.subscribedAt);
+                                    const nextDate = new Date(subDate);
+                                    nextDate.setMonth(nextDate.getMonth() + 1);
+                                    return (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="border-b border-gray-100">
+                                                        {['Date', 'Plan', 'Amount', 'Status'].map(h => (
+                                                            <th key={h} className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider pb-3 pr-4">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr className="border-b border-gray-50">
+                                                        <td className="py-3 pr-4 text-gray-700 font-medium">{subDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                                        <td className="py-3 pr-4">
+                                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-white bg-gradient-to-r ${plan?.gradient}`}>{plan?.name}</span>
+                                                        </td>
+                                                        <td className="py-3 pr-4 font-bold text-gray-900">${activePlan.price}.00</td>
+                                                        <td className="py-3">
+                                                            <span className="text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-2.5 py-1 rounded-full">✓ Paid</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr className="opacity-40">
+                                                        <td className="py-3 pr-4 text-gray-700 font-medium">{nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                                        <td className="py-3 pr-4">
+                                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-white bg-gradient-to-r ${plan?.gradient}`}>{plan?.name}</span>
+                                                        </td>
+                                                        <td className="py-3 pr-4 font-bold text-gray-900">${activePlan.price}.00</td>
+                                                        <td className="py-3">
+                                                            <span className="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-full">⏳ Upcoming</span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                                <p className="text-xs text-gray-500">Next billing: <span className="font-bold text-gray-800">{nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await updateDbUserSubscription(walletAddress, null);
+                                                            saveSubscription(walletAddress, null);
+                                                            setActivePlan(null);
+                                                        } catch (err) {
+                                                            console.error('Failed to cancel subscription:', err);
+                                                        }
+                                                    }}
+                                                    className="text-xs text-red-500 hover:text-red-700 font-semibold hover:underline transition-colors"
+                                                >
+                                                    Cancel Subscription
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })() : (
                                     <div className="text-center py-10">
                                         <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                                         <p className="text-gray-400 text-sm">No billing history yet</p>
@@ -1842,6 +1853,255 @@ const Dashboard = () => {
 
                         </div>
                     )}
+
+                    {/* ══════════════════ REFERRALS TAB ══════════════════ */}
+                    {activeTab === 'referrals' && (() => {
+                        const totalRefs = referrals.length;
+                        let rank = 'Starter';
+                        let commission = '0%';
+                        let rankGlow = '';
+                        
+                        if (totalRefs >= 50) {
+                            rank = 'Platinum';
+                            commission = '30%';
+                            rankGlow = 'ring-2 ring-purple-400 bg-purple-50/50';
+                        } else if (totalRefs >= 25) {
+                            rank = 'Gold';
+                            commission = '25%';
+                            rankGlow = 'ring-2 ring-amber-400 bg-amber-50/50';
+                        } else if (totalRefs >= 10) {
+                            rank = 'Silver';
+                            commission = '20%';
+                            rankGlow = 'ring-2 ring-slate-400 bg-slate-50/50';
+                        } else if (totalRefs >= 1) {
+                            rank = 'Bronze';
+                            commission = '15%';
+                            rankGlow = 'ring-2 ring-amber-500/40 bg-amber-50/30';
+                        }
+
+                        const refLink = `${window.location.origin}?ref=${walletAddress}`;
+
+                        const copyToClipboard = () => {
+                            navigator.clipboard.writeText(refLink);
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2000);
+                        };
+
+                        const shareTwitter = () => {
+                            const text = encodeURIComponent(`Join Crypto Suggest, showcase your blockchain projects, and get reviewed! 🚀 `);
+                            const url = encodeURIComponent(refLink);
+                            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+                        };
+
+                        const shareTelegram = () => {
+                            const text = encodeURIComponent(`Join Crypto Suggest and showcase your blockchain projects!`);
+                            const url = encodeURIComponent(refLink);
+                            window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+                        };
+
+                        const shareWhatsApp = () => {
+                            const text = encodeURIComponent(`Join Crypto Suggest and showcase your blockchain projects! ${refLink}`);
+                            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                        };
+
+                        return (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* ── Header & Info ── */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                                            <Users className="w-5 h-5 text-indigo-500" /> Referral & Partner Program
+                                        </h2>
+                                        <p className="text-sm text-gray-500 mt-0.5">Invite builders and projects to join and earn commissions</p>
+                                    </div>
+                                </div>
+
+                                {/* ── Referral Link Copy Card ── */}
+                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                    <div className="space-y-2 flex-1 w-full">
+                                        <h4 className="font-bold text-gray-900 text-sm">Your Invitation Link</h4>
+                                        <p className="text-xs text-gray-500">Share this link to register users under your referral circle and earn commission on their subscriptions.</p>
+                                        
+                                        <div className="flex items-center gap-2 mt-3 bg-gray-50 border border-gray-200 rounded-2xl p-2 pl-4 w-full max-w-xl">
+                                            <Globe className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                            <input 
+                                                type="text" 
+                                                readOnly 
+                                                value={refLink} 
+                                                className="bg-transparent border-none outline-none text-xs text-gray-700 font-mono flex-1 min-w-0" 
+                                            />
+                                            <button 
+                                                onClick={copyToClipboard}
+                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow transition-all ${
+                                                    copiedLink ? 'bg-green-500' : 'bg-gradient-to-r from-primary to-primary-dark hover:scale-[1.02]'
+                                                }`}
+                                            >
+                                                {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                                {copiedLink ? 'Copied!' : 'Copy Link'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Social sharing */}
+                                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Quick Share</p>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={shareTwitter}
+                                                className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 font-bold rounded-xl text-xs transition-all"
+                                            >
+                                                <Twitter className="w-3.5 h-3.5 fill-sky-600" /> Twitter
+                                            </button>
+                                            <button 
+                                                onClick={shareTelegram}
+                                                className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 font-bold rounded-xl text-xs transition-all"
+                                            >
+                                                <Send className="w-3.5 h-3.5 animate-pulse" /> Telegram
+                                            </button>
+                                            <button 
+                                                onClick={shareWhatsApp}
+                                                className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 font-bold rounded-xl text-xs transition-all"
+                                            >
+                                                <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ── Stats grid ── */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                    <StatCard 
+                                        icon={Users} 
+                                        label="Total Referrals" 
+                                        value={totalRefs} 
+                                        color="text-indigo-600" 
+                                        bg="bg-white" 
+                                    />
+                                    <StatCard 
+                                        icon={Award} 
+                                        label="Current Rank" 
+                                        value={rank} 
+                                        color={rank === 'Starter' ? 'text-gray-500' : rank === 'Bronze' ? 'text-amber-800' : rank === 'Silver' ? 'text-slate-700' : rank === 'Gold' ? 'text-amber-500' : 'text-purple-600'} 
+                                        bg="bg-white" 
+                                    />
+                                    <StatCard 
+                                        icon={CreditCard} 
+                                        label="Commission Tier" 
+                                        value={commission} 
+                                        color="text-emerald-600" 
+                                        bg="bg-white" 
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* ── Partner Ranking System Table ── */}
+                                    <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
+                                        <div>
+                                            <h3 className="font-black text-gray-900 text-base">Partner Ranking System</h3>
+                                            <p className="text-xs text-gray-500 mt-0.5">Rank up based on total referrals to unlock higher commission rates.</p>
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-gray-100 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                                                        <th className="py-3 px-4 font-black">Partner Rank</th>
+                                                        <th className="py-3 px-4 font-black text-center">Total Referrals</th>
+                                                        <th className="py-3 px-4 font-black text-right">Commission</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr className={`border-b border-gray-50 transition-all rounded-2xl ${rank === 'Bronze' ? rankGlow : 'hover:bg-slate-50/50'}`}>
+                                                        <td className="py-4 px-4 font-bold text-gray-800 flex items-center gap-2">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-700/60" />
+                                                            Bronze
+                                                            {rank === 'Bronze' && <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold ml-2">Active</span>}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center font-bold text-gray-600">1–9</td>
+                                                        <td className="py-4 px-4 text-right font-black text-indigo-600">15%</td>
+                                                    </tr>
+                                                    <tr className={`border-b border-gray-50 transition-all rounded-2xl ${rank === 'Silver' ? rankGlow : 'hover:bg-slate-50/50'}`}>
+                                                        <td className="py-4 px-4 font-bold text-gray-800 flex items-center gap-2">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                                                            Silver
+                                                            {rank === 'Silver' && <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold ml-2">Active</span>}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center font-bold text-gray-600">10–24</td>
+                                                        <td className="py-4 px-4 text-right font-black text-indigo-600">20%</td>
+                                                    </tr>
+                                                    <tr className={`border-b border-gray-50 transition-all rounded-2xl ${rank === 'Gold' ? rankGlow : 'hover:bg-slate-50/50'}`}>
+                                                        <td className="py-4 px-4 font-bold text-gray-800 flex items-center gap-2">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                                            Gold
+                                                            {rank === 'Gold' && <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold ml-2">Active</span>}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center font-bold text-gray-600">25–49</td>
+                                                        <td className="py-4 px-4 text-right font-black text-indigo-600">25%</td>
+                                                    </tr>
+                                                    <tr className={`border-b border-gray-50 transition-all rounded-2xl ${rank === 'Platinum' ? rankGlow : 'hover:bg-slate-50/50'}`}>
+                                                        <td className="py-4 px-4 font-bold text-gray-800 flex items-center gap-2">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
+                                                            Platinum
+                                                            {rank === 'Platinum' && <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold ml-2">Active</span>}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center font-bold text-gray-600">50+</td>
+                                                        <td className="py-4 px-4 text-right font-black text-indigo-600">30%</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Referred Users List ── */}
+                                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
+                                        <div>
+                                            <h3 className="font-black text-gray-900 text-base">Referred Partners</h3>
+                                            <p className="text-xs text-gray-500 mt-0.5">Wallets registered using your link</p>
+                                        </div>
+
+                                        {referralsLoading ? (
+                                            <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                                <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
+                                                <p className="text-xs text-gray-500 font-semibold">Loading partners...</p>
+                                            </div>
+                                        ) : referrals.length === 0 ? (
+                                            <div className="text-center py-10 bg-slate-50/60 rounded-2xl border border-dashed border-gray-200">
+                                                <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                                <p className="text-xs text-gray-600 font-bold">No referrals yet</p>
+                                                <p className="text-[10px] text-gray-400 mt-1 max-w-[200px] mx-auto">Share your link with crypto developers to see them here.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                                                {referrals.map((ref, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl hover:shadow-sm transition-all animate-fade-in">
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-mono font-bold text-gray-800 truncate">
+                                                                {ref.walletAddress.slice(0, 6)}...{ref.walletAddress.slice(-4)}
+                                                            </p>
+                                                            <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                                                                Joined {new Date(ref.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            {ref.subscribedPlan ? (
+                                                                <span className="text-[9px] bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                                                    {ref.subscribedPlan}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[9px] bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                                                    Free
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* ══════════════════ PROFILE TAB ══════════════════ */}
                     {activeTab === 'profile' && (

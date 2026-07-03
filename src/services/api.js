@@ -404,14 +404,29 @@ export const getMyScamReports = async (walletAddress) => {
 // DB-backed User & Project API Requests
 // ==========================================
 
-export const getDbUser = async (walletAddress) => {
+export const getDbUser = async (walletAddress, referrer = null) => {
     try {
-        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}`);
+        let url = `${API_URL}/users/${encodeURIComponent(walletAddress)}`;
+        if (referrer) {
+            url += `?ref=${encodeURIComponent(referrer)}`;
+        }
+        const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch DB user profile');
         return await response.json();
     } catch (error) {
         console.error('Error fetching DB user:', error);
         return null;
+    }
+};
+
+export const getDbUserReferrals = async (walletAddress) => {
+    try {
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/referrals`);
+        if (!response.ok) throw new Error('Failed to fetch DB user referrals');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching DB user referrals:', error);
+        return [];
     }
 };
 

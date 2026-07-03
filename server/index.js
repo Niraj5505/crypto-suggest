@@ -150,7 +150,6 @@ app.post('/api/websites/submit', async (req, res) => {
         else if (category === 'nft') dbCategory = 'NFT Marketplaces';
         else if (category === 'wallet') dbCategory = 'Crypto Wallets';
         else if (category === 'defi') dbCategory = 'DeFi Platforms';
-        else if (category === 'mlm') dbCategory = 'MLM Projects';
         else if (category === 'other') dbCategory = 'Other';
 
         // Check if website already exists
@@ -470,7 +469,23 @@ app.get('/api/users/:walletAddress', async (req, res) => {
         const walletAddress = req.params.walletAddress.toLowerCase();
         let user = await User.findOne({ walletAddress });
         if (!user) {
-            user = new User({ walletAddress });
+            // Check for a referrer code
+            const referrerAddress = req.query.ref ? req.query.ref.toLowerCase().trim() : null;
+            let referredBy = null;
+            
+            if (referrerAddress && referrerAddress !== walletAddress) {
+                const referrer = await User.findOne({ walletAddress: referrerAddress });
+                if (referrer) {
+                    referredBy = referrerAddress;
+                    referrer.referralCount = (referrer.referralCount || 0) + 1;
+                    await referrer.save();
+                }
+            }
+            
+            user = new User({ 
+                walletAddress,
+                referredBy
+            });
             await user.save();
         }
         res.json(user);
@@ -570,6 +585,20 @@ app.get('/api/users/:walletAddress/reviews', async (req, res) => {
     }
 });
 
+// @desc    Get users referred by this wallet
+// @route   GET /api/users/:walletAddress/referrals
+app.get('/api/users/:walletAddress/referrals', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const referrals = await User.find({ referredBy: walletAddress })
+            .select('walletAddress createdAt subscribedPlan')
+            .sort({ createdAt: -1 });
+        res.json(referrals);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching referrals', error: error.message });
+    }
+});
+
 // @desc    Get user projects
 // @route   GET /api/users/:walletAddress/projects
 app.get('/api/users/:walletAddress/projects', async (req, res) => {
@@ -587,6 +616,13 @@ app.get('/api/users/:walletAddress/projects', async (req, res) => {
 app.post('/api/users/:walletAddress/projects', async (req, res) => {
     try {
         const walletAddress = req.params.walletAddress.toLowerCase();
+        
+        // Block creation if user has no subscription
+        const user = await User.findOne({ walletAddress });
+        if (!user || !user.subscribedPlan) {
+            return res.status(403).json({ message: 'Active subscription is required to add projects.' });
+        }
+        
         const { name, description, url, githubUrl, category, status, tags, gradient } = req.body;
         
         if (!name || !description) {

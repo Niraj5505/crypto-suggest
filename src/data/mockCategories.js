@@ -166,17 +166,6 @@ export const mockCategories = [
         featured: false,
         brandDomain: 'lido.fi'
     },
-    {
-        id: 16,
-        name: 'MLM Projects',
-        slug: 'mlm-projects',
-        icon: 'Network',
-        description: 'Multi-level marketing and referral-based crypto and blockchain projects',
-        websiteCount: 4,
-        subCategories: ['Referral Programs', 'Matrix Schemes', 'MLM Tokens'],
-        featured: true,
-        brandDomain: 'womup.com'
-    }
 ];
 
 export default mockCategories;

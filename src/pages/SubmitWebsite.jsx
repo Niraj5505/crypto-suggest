@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { Check, Upload, ChevronRight, ChevronLeft, Sparkles, PartyPopper, Lock, Crown, ArrowLeft, AlertCircle, CreditCard } from 'lucide-react';
+import { Check, Upload, ChevronRight, ChevronLeft, Sparkles, PartyPopper, TrendingUp, Award } from 'lucide-react';
 import { submitWebsite } from '../services/api';
 
 // Simple CSS Confetti Component
@@ -29,8 +28,6 @@ const Confetti = () => {
 };
 
 const SubmitWebsite = () => {
-    const navigate = useNavigate();
-
     const [step, setStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [formData, setFormData] = useState({
@@ -99,8 +96,8 @@ const SubmitWebsite = () => {
     const benefits = [
         { title: 'Increase Visibility', description: 'Reach crypto enthusiasts actively searching for platforms like yours', icon: <Sparkles className="w-6 h-6 text-yellow-500" /> },
         { title: 'Build Trust', description: 'Verified badge adds credibility to your platform', icon: <Check className="w-6 h-6 text-green-500" /> },
-        { title: 'Targeted Traffic', description: 'Users specifically interested in your niche', icon: <ChevronRight className="w-6 h-6 text-indigo-500" /> },
-        { title: 'Free Listing', description: 'Basic listing at no cost with optional featured upgrades', icon: <Check className="w-6 h-6 text-primary" /> }
+        { title: 'Targeted Traffic', description: 'Users specifically interested in your niche', icon: <TrendingUp className="w-6 h-6 text-indigo-500" /> },
+        { title: 'Free Listing', description: 'Basic listing at no cost with optional featured upgrades', icon: <Award className="w-6 h-6 text-primary" /> }
     ];
 
     return (
@@ -242,7 +239,6 @@ const SubmitWebsite = () => {
                                                         <option value="nft">NFT Marketplace</option>
                                                         <option value="wallet">Crypto Wallet</option>
                                                         <option value="defi">DeFi Platform</option>
-                                                        <option value="mlm">MLM Project</option>
                                                         <option value="other">Other</option>
                                                     </select>
                                                 </div>

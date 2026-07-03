@@ -67,6 +67,16 @@ const userSchema = new mongoose.Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },
+    referredBy: {
+        type: String,
+        lowercase: true,
+        trim: true,
+        default: null
+    },
+    referralCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 
