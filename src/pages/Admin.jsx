@@ -6,7 +6,7 @@ import {
     CreditCard, BarChart2, RefreshCw, Eye, Star, Flag,
     Search, ChevronDown, TrendingUp, Crown, Zap, Gem,
     CheckCircle2, Clock, Globe, Hash, Calendar, Filter,
-    Plus, PenLine
+    Plus, PenLine, LogOut
 } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import Button from '../components/common/Button';
@@ -121,6 +121,24 @@ const Empty = ({ icon: Icon, text }) => (
 const Admin = () => {
     const { isConnected, walletAddress, connectWallet, getTruncatedAddress } = useWallet();
     const [activeTab, setActiveTab] = useState('overview');
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(() => {
+        return sessionStorage.getItem('admin_is_logged_in') === 'true';
+    });
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        if (email.trim().toLowerCase() === 'admin@gmail.com' && password === 'admin@123') {
+            setIsLoggedIn(true);
+            sessionStorage.setItem('admin_is_logged_in', 'true');
+            setLoginError('');
+        } else {
+            setLoginError('Invalid admin email or password.');
+        }
+    };
 
     /* server data */
     const [websites,    setWebsites]    = useState([]);
@@ -309,6 +327,61 @@ const Admin = () => {
         { id: 'approvals',     label: 'Site Approvals',    icon: ShieldCheck,  badge: pendingWebsites || null },
     ];
 
+    /* ── admin login ── */
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-10 rounded-[2rem] shadow-xl max-w-md w-full border border-gray-100/80 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+                    
+                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto animate-pulse">
+                        <ShieldCheck className="w-9 h-9" />
+                    </div>
+                    
+                    <h1 className="text-2xl font-bold text-slate-800 mb-1">Admin Panel Login</h1>
+                    <p className="text-slate-500 mb-6 text-sm">Please sign in to access security settings</p>
+                    
+                    <form onSubmit={handleLogin} className="space-y-4 text-left animate-fade-in">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Address</label>
+                            <input 
+                                type="email" 
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                                placeholder="admin@gmail.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                            <input 
+                                type="password" 
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                        
+                        {loginError && (
+                            <p className="text-red-500 text-xs font-bold bg-red-50 border border-red-100 p-3 rounded-lg text-center">{loginError}</p>
+                        )}
+                        
+                        <Button type="submit" variant="primary" className="w-full py-3.5 mt-2 flex items-center justify-center font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/10">
+                            Sign In
+                        </Button>
+                    </form>
+                    
+                    <Link to="/" className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors mt-6 inline-block">
+                        ← Back to Public Directory
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     /* ── not connected ── */
     if (!isConnected) return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
@@ -389,11 +462,21 @@ const Admin = () => {
                     </nav>
                 </div>
 
-                <div className="p-3 border-t border-slate-800">
+                <div className="p-3 border-t border-slate-800 space-y-1">
                     <Link to="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all text-sm">
                         <LayoutGrid className="w-4 h-4" />
                         <span>Public Directory</span>
                     </Link>
+                    <button 
+                        onClick={() => {
+                            setIsLoggedIn(false);
+                            sessionStorage.removeItem('admin_is_logged_in');
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-red-400 hover:bg-red-950/20 hover:text-red-300 transition-all text-sm text-left animate-fade-in"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                    </button>
                 </div>
             </aside>
 

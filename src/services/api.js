@@ -1,10 +1,26 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+const cleanUrl = (url) => {
+    if (!url) return '';
+    let clean = url.trim();
+    // Strip leading list formatting like "1) ", "1. ", "1)", "1.", "[1]", etc. and whitespace
+    clean = clean.replace(/^[0-9]+[\.\)]\s*/, '');
+    clean = clean.replace(/^\[[0-9]+\]\s*/, '');
+    clean = clean.trim();
+    
+    // Ensure it starts with http:// or https://
+    if (!/^https?:\/\//i.test(clean)) {
+        clean = `https://${clean}`;
+    }
+    return clean;
+};
+
 const mapWebsite = (site) => {
     if (!site) return null;
     return {
         ...site,
         id: site._id || site.id,
+        url: cleanUrl(site.url),
         rating: site.trustScore || 4.0, // fallback to trustScore if rating is undefined
     };
 };

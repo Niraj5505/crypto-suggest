@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Sparkles, AlertTriangle, Flag, Send,
     RefreshCw, Clock, Hash, Search, Plus, Info,
     Folder, Code2, Rocket, Tag, Trash2, PenLine, GitBranch,
-    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown
+    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown, QrCode
 } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import { useWallet } from '../contexts/WalletContext';
@@ -248,6 +248,19 @@ function saveSubscription(addr, data) {
     localStorage.setItem(SUB_KEY(addr), JSON.stringify(data));
 }
 
+const BILLING_HISTORY_KEY = (addr) => `cs_billing_history_${addr}`;
+
+function loadBillingHistory(addr) {
+    if (!addr) return [];
+    try { return JSON.parse(localStorage.getItem(BILLING_HISTORY_KEY(addr)) || '[]'); }
+    catch { return []; }
+}
+
+function saveBillingHistory(addr, list) {
+    if (!addr) return;
+    localStorage.setItem(BILLING_HISTORY_KEY(addr), JSON.stringify(list));
+}
+
 const TABS = [
     { id: 'overview',      label: 'Overview',      icon: LayoutDashboard },
     { id: 'profile',       label: 'My Profile',    icon: User },
@@ -266,6 +279,9 @@ const Dashboard = () => {
     const [subConfirm, setSubConfirm]         = useState(null);  // plan id pending confirm
     const [subSuccess, setSubSuccess]         = useState(false);
     const [openFaq, setOpenFaq]               = useState(null);
+    const [qrVisible, setQrVisible]           = useState({});
+    const toggleQr = (key) => setQrVisible(prev => ({ ...prev, [key]: !prev[key] }));
+    const [billingHistory, setBillingHistory] = useState([]);
 
     /* project management state */
     const [projects, setProjects]               = useState([]);
@@ -369,7 +385,36 @@ const Dashboard = () => {
         loadDbData();
     }, [walletAddress]);
 
+    /* load billing history and sync with active subscription */
+    useEffect(() => {
+        if (!walletAddress) {
+            setBillingHistory([]);
+            return;
+        }
+        let history = loadBillingHistory(walletAddress);
+        
+        // If history is empty but we have an activePlan, populate it!
+        if (history.length === 0 && activePlan) {
+            const plan = PLANS.find(p => p.id === activePlan.planId);
+            const initialTx = {
+                id: 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                date: activePlan.subscribedAt || Date.now(),
+                planId: activePlan.planId,
+                price: activePlan.price || plan?.price || 199,
+                status: 'Paid'
+            };
+            history = [initialTx];
+            saveBillingHistory(walletAddress, history);
+        }
+        setBillingHistory(history);
+    }, [walletAddress, activePlan]);
+
     const openAddProject = () => {
+        if (!activePlan) {
+            alert('Subscription required to add projects. Redirecting to subscription plans...');
+            setActiveTab('subscription');
+            return;
+        }
         setEditingProject(null);
         setProjectForm(BLANK_PROJECT);
         setProjectErrors({});
@@ -643,6 +688,29 @@ const Dashboard = () => {
                                 </button>
                             </div>
 
+                            {/* Subscription requirement banner */}
+                            {!activePlan && (
+                                <div className="bg-gradient-to-r from-amber-50 via-orange-50/40 to-yellow-50/30 border border-amber-200 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-sm">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-amber-100/80 rounded-2xl flex items-center justify-center flex-shrink-0 text-amber-600">
+                                            <Crown className="w-6 h-6 animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black text-gray-900 text-base">Subscription Required</h3>
+                                            <p className="text-gray-600 text-xs mt-1 max-w-xl leading-relaxed">
+                                                You need an active subscription to add new crypto or blockchain projects. Get started with our starter or pro plan to showcase your work to the community.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setActiveTab('subscription')}
+                                        className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-xs flex items-center gap-1.5 whitespace-nowrap self-stretch md:self-auto justify-center hover:scale-[1.02]"
+                                    >
+                                        <Sparkles className="w-3.5 h-3.5" /> View Subscription Plans
+                                    </button>
+                                </div>
+                            )}
+
                             {/* ── Stats bar ── */}
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                                 {[{ label: 'Total', id: 'all' }, ...PROJECT_STATUSES].map(s => {
@@ -673,23 +741,46 @@ const Dashboard = () => {
                                     ? projects
                                     : projects.filter(p => p.status === projectFilter);
 
-                                if (filtered.length === 0) return (
-                                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                                        <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                                            <Rocket className="w-10 h-10 text-indigo-300" />
+                                if (filtered.length === 0) {
+                                    if (!activePlan) {
+                                        return (
+                                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                                <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-5 text-amber-500">
+                                                    <Crown className="w-10 h-10 animate-pulse" />
+                                                </div>
+                                                <p className="text-gray-700 font-bold text-lg mb-1">
+                                                    Unlock Projects Feature
+                                                </p>
+                                                <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+                                                    Showcase and manage your crypto or blockchain projects to thousands of active users. An active subscription is required to add projects.
+                                                </p>
+                                                <button
+                                                    onClick={() => setActiveTab('subscription')}
+                                                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm flex items-center gap-2 mx-auto"
+                                                >
+                                                    <Sparkles className="w-4 h-4" /> Get Subscription Plan
+                                                </button>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                            <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                                                <Rocket className="w-10 h-10 text-indigo-300" />
+                                            </div>
+                                            <p className="text-gray-700 font-bold text-lg mb-1">
+                                                {projectFilter === 'all' ? 'No projects yet' : `No ${PROJECT_STATUSES.find(s=>s.id===projectFilter)?.label} projects`}
+                                            </p>
+                                            <p className="text-gray-400 text-sm mb-5">Start by adding your first crypto or blockchain project</p>
+                                            <button
+                                                onClick={openAddProject}
+                                                className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
+                                            >
+                                                + Add First Project
+                                            </button>
                                         </div>
-                                        <p className="text-gray-700 font-bold text-lg mb-1">
-                                            {projectFilter === 'all' ? 'No projects yet' : `No ${PROJECT_STATUSES.find(s=>s.id===projectFilter)?.label} projects`}
-                                        </p>
-                                        <p className="text-gray-400 text-sm mb-5">Start by adding your first crypto or blockchain project</p>
-                                        <button
-                                            onClick={openAddProject}
-                                            className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
-                                        >
-                                            + Add First Project
-                                        </button>
-                                    </div>
-                                );
+                                    );
+                                }
 
                                 return (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -1084,8 +1175,51 @@ const Dashboard = () => {
                                                         <BadgeCheck className="w-4 h-4" /> Current Plan
                                                     </div>
                                                 ) : subConfirm === plan.id ? (
-                                                    <div className="space-y-2">
-                                                        <p className="text-xs text-gray-600 text-center font-medium">Confirm subscription to <strong>{plan.name}</strong> for <strong>${plan.price}/mo</strong>?</p>
+                                                    <div className="space-y-3">
+                                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left">
+                                                            <p className="text-xs text-gray-700 font-bold mb-2">1. Send ${plan.price} (USDT/USDC/ETH/TRX) to:</p>
+                                                            <div className="space-y-3">
+                                                                <div>
+                                                                    <div className="flex items-center justify-between">
+                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">BEP20 (Binance Smart Chain)</p>
+                                                                        <button 
+                                                                            type="button"
+                                                                            onClick={() => toggleQr(plan.id + '_bep20')}
+                                                                            className="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 flex items-center gap-0.5 transition-colors"
+                                                                        >
+                                                                            <QrCode className="w-3 h-3" /> {qrVisible[plan.id + '_bep20'] ? 'Hide QR' : 'Show QR'}
+                                                                        </button>
+                                                                    </div>
+                                                                    <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>0x185018c5f26B2cE105e0B80b231178CE5913b621</p>
+                                                                    {qrVisible[plan.id + '_bep20'] && (
+                                                                        <div className="mt-2 flex flex-col items-center bg-white p-2.5 rounded-lg border border-gray-100 shadow-inner animate-fade-in">
+                                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=0x185018c5f26B2cE105e0B80b231178CE5913b621" alt="BEP20 QR Code" className="w-[120px] h-[120px] object-contain" />
+                                                                            <span className="text-[9px] text-gray-400 font-semibold mt-1">Scan for BEP20 payment</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center justify-between">
+                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">TRC20 (Tron Network)</p>
+                                                                        <button 
+                                                                            type="button"
+                                                                            onClick={() => toggleQr(plan.id + '_trc20')}
+                                                                            className="text-[10px] text-indigo-600 font-bold hover:text-indigo-800 flex items-center gap-0.5 transition-colors"
+                                                                        >
+                                                                            <QrCode className="w-3 h-3" /> {qrVisible[plan.id + '_trc20'] ? 'Hide QR' : 'Show QR'}
+                                                                        </button>
+                                                                    </div>
+                                                                    <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ</p>
+                                                                    {qrVisible[plan.id + '_trc20'] && (
+                                                                        <div className="mt-2 flex flex-col items-center bg-white p-2.5 rounded-lg border border-gray-100 shadow-inner animate-fade-in">
+                                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ" alt="TRC20 QR Code" className="w-[120px] h-[120px] object-contain" />
+                                                                            <span className="text-[9px] text-gray-400 font-semibold mt-1">Scan for TRC20 payment</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-gray-600 text-center font-medium">2. After sending, confirm your subscription:</p>
                                                         <div className="flex gap-2">
                                                             <button
                                                                 onClick={async () => {
@@ -1094,6 +1228,19 @@ const Dashboard = () => {
                                                                         await updateDbUserSubscription(walletAddress, plan.id, sub.subscribedAt);
                                                                         setActivePlan(sub);
                                                                         saveSubscription(walletAddress, sub);
+                                                                        
+                                                                        // Add to billing history
+                                                                        const newTx = {
+                                                                            id: 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                                                                            date: sub.subscribedAt,
+                                                                            planId: plan.id,
+                                                                            price: plan.price,
+                                                                            status: 'Paid'
+                                                                        };
+                                                                        const updatedHistory = [newTx, ...billingHistory];
+                                                                        saveBillingHistory(walletAddress, updatedHistory);
+                                                                        setBillingHistory(updatedHistory);
+                                                                        
                                                                         setSubConfirm(null);
                                                                         setSubSuccess(true);
                                                                         setTimeout(() => setSubSuccess(false), 5000);
@@ -1151,64 +1298,80 @@ const Dashboard = () => {
                                 <h3 className="font-bold text-gray-900 text-base mb-4 flex items-center gap-2">
                                     <CreditCard className="w-4 h-4 text-indigo-500" /> Billing History
                                 </h3>
-                                {activePlan ? (() => {
-                                    const plan = PLANS.find(p => p.id === activePlan.planId);
-                                    const subDate = new Date(activePlan.subscribedAt);
-                                    const nextDate = new Date(subDate);
-                                    nextDate.setMonth(nextDate.getMonth() + 1);
-                                    return (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm">
-                                                <thead>
-                                                    <tr className="border-b border-gray-100">
-                                                        {['Date', 'Plan', 'Amount', 'Status'].map(h => (
-                                                            <th key={h} className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider pb-3 pr-4">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr className="border-b border-gray-50">
-                                                        <td className="py-3 pr-4 text-gray-700 font-medium">{subDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                                        <td className="py-3 pr-4">
-                                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-white bg-gradient-to-r ${plan?.gradient}`}>{plan?.name}</span>
-                                                        </td>
-                                                        <td className="py-3 pr-4 font-bold text-gray-900">${activePlan.price}.00</td>
-                                                        <td className="py-3">
-                                                            <span className="text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-2.5 py-1 rounded-full">✓ Paid</span>
-                                                        </td>
-                                                    </tr>
-                                                    <tr className="opacity-40">
-                                                        <td className="py-3 pr-4 text-gray-700 font-medium">{nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                                        <td className="py-3 pr-4">
-                                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-white bg-gradient-to-r ${plan?.gradient}`}>{plan?.name}</span>
-                                                        </td>
-                                                        <td className="py-3 pr-4 font-bold text-gray-900">${activePlan.price}.00</td>
-                                                        <td className="py-3">
-                                                            <span className="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-full">⏳ Upcoming</span>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                                <p className="text-xs text-gray-500">Next billing: <span className="font-bold text-gray-800">{nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            await updateDbUserSubscription(walletAddress, null);
-                                                            saveSubscription(walletAddress, null);
-                                                            setActivePlan(null);
-                                                        } catch (err) {
-                                                            console.error('Failed to cancel subscription:', err);
-                                                        }
-                                                    }}
-                                                    className="text-xs text-red-500 hover:text-red-700 font-semibold hover:underline transition-colors"
-                                                >
-                                                    Cancel Subscription
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })() : (
+                                {billingHistory.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-100">
+                                                    {['Transaction ID', 'Date', 'Plan', 'Amount', 'Status'].map(h => (
+                                                        <th key={h} className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider pb-3 pr-4">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {billingHistory.map((tx) => {
+                                                    const plan = PLANS.find(p => p.id === tx.planId);
+                                                    const txDate = new Date(tx.date);
+                                                    return (
+                                                        <tr key={tx.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                                            <td className="py-3 pr-4 text-xs font-mono font-bold text-indigo-600">{tx.id}</td>
+                                                            <td className="py-3 pr-4 text-gray-600 font-medium text-xs">{txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                                            <td className="py-3 pr-4">
+                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white bg-gradient-to-r ${plan?.gradient || 'from-gray-500 to-gray-600'}`}>{plan?.name || 'Starter'}</span>
+                                                            </td>
+                                                            <td className="py-3 pr-4 font-bold text-gray-900 text-xs">${tx.price}.00</td>
+                                                            <td className="py-3">
+                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                                                    tx.status === 'Paid' 
+                                                                        ? 'text-green-700 bg-green-50 border-green-200' 
+                                                                        : 'text-gray-600 bg-gray-50 border-gray-200'
+                                                                }`}>
+                                                                    {tx.status === 'Paid' ? '✓ Paid' : 'Cancelled'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                        
+                                        {activePlan && (() => {
+                                            const subDate = new Date(activePlan.subscribedAt);
+                                            const nextDate = new Date(subDate);
+                                            nextDate.setMonth(nextDate.getMonth() + 1);
+                                            return (
+                                                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                                    <p className="text-xs text-gray-500">Next billing: <span className="font-bold text-gray-800">{nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!window.confirm('Are you sure you want to cancel your subscription?')) return;
+                                                            try {
+                                                                    await updateDbUserSubscription(walletAddress, null);
+                                                                    saveSubscription(walletAddress, null);
+                                                                    setActivePlan(null);
+                                                                    
+                                                                    // Update status in billing history
+                                                                    const updatedHistory = billingHistory.map(tx => {
+                                                                        if (tx.planId === activePlan.planId && tx.status === 'Paid') {
+                                                                            return { ...tx, status: 'Cancelled' };
+                                                                        }
+                                                                        return tx;
+                                                                    });
+                                                                    saveBillingHistory(walletAddress, updatedHistory);
+                                                                    setBillingHistory(updatedHistory);
+                                                            } catch (err) {
+                                                                console.error('Failed to cancel subscription:', err);
+                                                            }
+                                                        }}
+                                                        className="text-xs text-red-500 hover:text-red-700 font-bold hover:underline transition-colors"
+                                                    >
+                                                        Cancel Subscription
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                ) : (
                                     <div className="text-center py-10">
                                         <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                                         <p className="text-gray-400 text-sm">No billing history yet</p>

@@ -1,3 +1,6 @@
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -132,6 +135,15 @@ app.post('/api/websites/submit', async (req, res) => {
             return res.status(400).json({ message: 'Please provide all required fields' });
         }
 
+        // Clean website URL to strip any leading numbering list flags and enforce https if protocol missing
+        let cleanWebsiteUrl = websiteUrl.trim();
+        cleanWebsiteUrl = cleanWebsiteUrl.replace(/^[0-9]+[\.\)]\s*/, '');
+        cleanWebsiteUrl = cleanWebsiteUrl.replace(/^\[[0-9]+\]\s*/, '');
+        cleanWebsiteUrl = cleanWebsiteUrl.trim();
+        if (!/^https?:\/\//i.test(cleanWebsiteUrl)) {
+            cleanWebsiteUrl = `https://${cleanWebsiteUrl}`;
+        }
+
         // Map frontend categories form names to DB names
         let dbCategory = category;
         if (category === 'exchange') dbCategory = 'Crypto Exchanges';
@@ -151,7 +163,7 @@ app.post('/api/websites/submit', async (req, res) => {
         const newWebsite = new Website({
             name: websiteName,
             slug,
-            url: websiteUrl,
+            url: cleanWebsiteUrl,
             category: dbCategory,
             shortDescription: description.substring(0, 120),
             longDescription: description,
