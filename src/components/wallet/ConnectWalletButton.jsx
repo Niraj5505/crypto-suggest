@@ -58,11 +58,16 @@ const ConnectWalletButton = ({ className = "" }) => {
             {/* Dropdown Menu */}
             {isDropdownOpen && (
                 <>
-                    <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setIsDropdownOpen(false)}
-                    />
-                    <div className={`absolute right-0 ${isMobile ? 'left-0 w-full' : 'w-64'} mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-fade-in`}>
+                    {!isMobile && (
+                        <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setIsDropdownOpen(false)}
+                        />
+                    )}
+                    <div className={isMobile
+                        ? "w-full mt-2 bg-gray-50/80 border border-gray-200/60 rounded-xl overflow-hidden z-10"
+                        : "absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-fade-in"
+                    }>
                         <div className="p-4 border-b border-gray-100">
                             <div className="text-xs text-text-muted mb-1">Logged in as</div>
                             <div className="font-bold text-sm text-text-main break-all">
@@ -73,18 +78,18 @@ const ConnectWalletButton = ({ className = "" }) => {
                         <Link
                             to="/dashboard"
                             onClick={() => setIsDropdownOpen(false)}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left"
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left font-bold"
                         >
                             <LayoutDashboard className="w-4 h-4 text-primary" />
-                            <span className="text-primary font-bold">My Dashboard</span>
+                            <span className="text-primary">My Dashboard</span>
                         </Link>
 
                         <button
                             onClick={handleDisconnect}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 transition-colors text-left border-t border-gray-100"
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 transition-colors text-left border-t border-gray-100 font-bold"
                         >
                             <LogOut className="w-4 h-4 text-red-600" />
-                            <span className="text-red-600 font-bold">Logout</span>
+                            <span className="text-red-600">Logout</span>
                         </button>
                     </div>
                 </>
