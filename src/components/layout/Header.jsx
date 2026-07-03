@@ -36,15 +36,18 @@ const Header = () => {
     return (
         <>
             <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-100/50 py-2 sm:py-3'
-                    : 'bg-transparent py-3 sm:py-5'
-                    }`}
+                className={`fixed top-0 left-0 right-0 transition-all duration-300 ${
+                    mobileMenuOpen
+                        ? 'z-[9999] bg-white shadow-none py-2'
+                        : scrolled
+                            ? 'z-50 bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-100/50 py-2 sm:py-3'
+                            : 'z-50 bg-transparent py-3 sm:py-5'
+                }`}
             >
                 <div className="container-custom">
                     <div className="flex items-center justify-between">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center gap-2.5 group relative z-50 select-none">
+                        <Link to="/" className="flex items-center gap-2.5 group relative z-[110] select-none">
                             <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 300 }}>
                                 {/* Brand Logo */}
                                 <img src={logoSrc} alt="Crypto Suggest Logo" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 object-contain" />
@@ -102,7 +105,7 @@ const Header = () => {
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="lg:hidden min-w-[44px] min-h-[44px] p-2.5 text-gray-700 bg-white/50 rounded-lg backdrop-blur-sm border border-gray-200 relative z-50 flex items-center justify-center"
+                            className="lg:hidden min-w-[44px] min-h-[44px] p-2.5 text-gray-700 bg-white/50 rounded-lg backdrop-blur-sm border border-gray-200 relative z-[110] flex items-center justify-center"
                             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                         >
                             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -114,11 +117,11 @@ const Header = () => {
                 <AnimatePresence>
                     {mobileMenuOpen && (
                         <motion.div
-                            initial={{ opacity: 0, clipPath: "circle(0% at 100% 0%)" }}
-                            animate={{ opacity: 1, clipPath: "circle(150% at 100% 0%)" }}
-                            exit={{ opacity: 0, clipPath: "circle(0% at 100% 0%)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="fixed inset-0 top-0 z-40 bg-white lg:hidden flex flex-col pt-20 sm:pt-24 px-4 sm:px-6"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="fixed inset-0 top-0 z-[100] bg-white lg:hidden flex flex-col pt-20 sm:pt-24 px-4 sm:px-6 overflow-y-auto"
                         >
                             <nav className="flex flex-col gap-2 sm:gap-4">
                                 {navLinks.map((link, i) => (

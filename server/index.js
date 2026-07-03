@@ -27,7 +27,29 @@ app.use(cors());
 app.use(express.json());
 
 // Connect Database
-connectDB();
+connectDB().then(async () => {
+    console.log('🔄 Syncing website review stats...');
+    try {
+        const websites = await Website.find();
+        await Promise.all(websites.map(async (w) => {
+            const reviews = await Review.find({ websiteId: w.slug });
+            const reviewCount = reviews.length;
+            let newTrustScore = 0.0;
+            if (reviewCount > 0) {
+                const sumRatings = reviews.reduce((acc, rev) => acc + rev.rating, 0);
+                newTrustScore = parseFloat(((sumRatings / reviewCount) / 20).toFixed(1));
+            }
+            if (w.reviewCount !== reviewCount || w.trustScore !== newTrustScore) {
+                w.reviewCount = reviewCount;
+                w.trustScore = newTrustScore;
+                await w.save();
+            }
+        }));
+        console.log('✅ Website review stats synced successfully!');
+    } catch (err) {
+        console.error('❌ Error syncing website review stats:', err);
+    }
+});
 
 // API Routes
 
@@ -99,10 +121,13 @@ app.get('/api/websites', async (req, res) => {
 
         const websites = await apiQuery;
         
-        // Dynamically add hasScamAlert flag from ScamReport collection
-        const websitesWithScam = await Promise.all(websites.map(async w => {
-            const hasScam = await ScamReport.exists({ websiteId: w.slug, status: 'confirmed' });
-            return { ...w.toObject(), hasScamAlert: !!hasScam };
+        // Fetch all confirmed scam reports websiteIds in a single query
+        const confirmedScams = await ScamReport.find({ status: 'confirmed' }).distinct('websiteId');
+        const confirmedScamsSet = new Set(confirmedScams);
+
+        const websitesWithScam = websites.map(w => ({
+            ...w.toObject(),
+            hasScamAlert: confirmedScamsSet.has(w.slug)
         }));
 
         res.json(websitesWithScam);
@@ -316,18 +341,22 @@ app.get('/api/rankings', async (req, res) => {
         const mostReviewed = await Website.find({ verified: true }).sort({ reviewCount: -1 }).limit(10);
         const newListings = await Website.find({ verified: true }).sort({ verifiedDate: -1 }).limit(10);
         
-        const mapWithScam = async (list) => {
-            return Promise.all(list.map(async w => {
-                const hasScam = await ScamReport.exists({ websiteId: w.slug, status: 'confirmed' });
-                return { ...w.toObject(), hasScamAlert: !!hasScam };
+        // Fetch all confirmed scam reports websiteIds in a single query
+        const confirmedScams = await ScamReport.find({ status: 'confirmed' }).distinct('websiteId');
+        const confirmedScamsSet = new Set(confirmedScams);
+        
+        const mapWithScam = (list) => {
+            return list.map(w => ({
+                ...w.toObject(),
+                hasScamAlert: confirmedScamsSet.has(w.slug)
             }));
         };
 
         res.json({
-            topRated: await mapWithScam(topRated),
-            trending: await mapWithScam(trending),
-            mostReviewed: await mapWithScam(mostReviewed),
-            newListings: await mapWithScam(newListings)
+            topRated: mapWithScam(topRated),
+            trending: mapWithScam(trending),
+            mostReviewed: mapWithScam(mostReviewed),
+            newListings: mapWithScam(newListings)
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error fetching rankings', error: error.message });

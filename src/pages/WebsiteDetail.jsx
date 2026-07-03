@@ -55,13 +55,14 @@ const WebsiteDetail = () => {
             try {
                 const site = await getWebsiteBySlug(slug);
                 setWebsite(site);
+                setLoading(false);
                 if (site) {
-                    const similar = await getWebsites({ category: site.category });
-                    setSimilarWebsites(similar.filter(w => w.id !== site.id).slice(0, 3));
+                    getWebsites({ category: site.category }).then(similar => {
+                        setSimilarWebsites(similar.filter(w => w.id !== site.id).slice(0, 3));
+                    }).catch(err => console.error("Error loading similar websites:", err));
                 }
             } catch (error) {
                 console.error("Error loading website detail:", error);
-            } finally {
                 setLoading(false);
             }
         };
@@ -190,6 +191,16 @@ const WebsiteDetail = () => {
                                             </span>
                                         )}
                                         <Badge variant="category" className="text-sm px-3 py-1">{website.category}</Badge>
+                                        <span className="flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-gray-200 text-sm font-medium text-text-muted shadow-sm">
+                                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                            <span className="font-bold text-text-main">
+                                                {website.trustScore ? website.trustScore.toFixed(1) : '0.0'}
+                                            </span>
+                                            <span className="text-gray-300">•</span>
+                                            <span>
+                                                {website.reviewCount || 0} {website.reviewCount === 1 ? 'review' : 'reviews'}
+                                            </span>
+                                        </span>
                                         <span className="flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-gray-200 text-sm font-medium text-text-muted shadow-sm">
                                             <Shield className="w-4 h-4 text-green-500" /> Verified
                                         </span>

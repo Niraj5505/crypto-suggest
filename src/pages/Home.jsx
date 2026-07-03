@@ -19,12 +19,13 @@ const Home = () => {
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                const cats = await getCategories();
-                const sites = await getWebsites({ featured: true, limit: 6 });
+                const [cats, sites, allSites] = await Promise.all([
+                    getCategories(),
+                    getWebsites({ featured: true, limit: 6 }),
+                    getWebsites({ verifiedOnly: 'false' })
+                ]);
                 setCategories(cats);
                 setFeaturedWebsites(sites);
-
-                const allSites = await getWebsites({ verifiedOnly: 'false' });
                 const scams = allSites.filter(site => site.hasScamAlert);
                 setScamWebsites(scams);
             } catch (error) {
