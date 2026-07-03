@@ -2545,6 +2545,27 @@ const Dashboard = () => {
                                 {/* Left 2/3 */}
                                 <div className="lg:col-span-2 space-y-6">
 
+                                    {/* Partner Program Highlight Banner */}
+                                    <div className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
+                                        <div className="space-y-2 relative z-10">
+                                            <div className="inline-flex items-center gap-1.5 bg-white/20 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                                <Award className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300/10" /> Partner Program Highlight
+                                            </div>
+                                            <h3 className="text-xl font-black">Earn commissions by inviting other projects!</h3>
+                                            <p className="text-xs text-white/80 max-w-lg leading-relaxed">
+                                                You have referred <strong className="text-white font-bold">{referrals.length} developers</strong>. 
+                                                Your current partner rank is <strong className="text-yellow-300 font-black">{referrals.length >= 50 ? 'Platinum' : referrals.length >= 25 ? 'Gold' : referrals.length >= 10 ? 'Silver' : referrals.length >= 1 ? 'Bronze' : 'Starter'}</strong>.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTab('referrals')}
+                                            className="px-5 py-2.5 bg-white hover:bg-gray-100 text-indigo-700 font-bold rounded-xl shadow-md text-xs whitespace-nowrap z-10 transition-transform active:scale-95"
+                                        >
+                                            View Referral Code 💎
+                                        </button>
+                                    </div>
+
                                     {/* Quick Actions */}
                                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                                         <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
