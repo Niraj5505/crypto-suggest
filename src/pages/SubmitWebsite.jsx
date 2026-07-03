@@ -5,8 +5,7 @@ import PageLayout from '../components/layout/PageLayout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { Check, Upload, ChevronRight, ChevronLeft, Sparkles, PartyPopper, Lock, Crown, ArrowLeft, AlertCircle, CreditCard } from 'lucide-react';
-import { submitWebsite, getDbUser } from '../services/api';
-import { useWallet } from '../contexts/WalletContext';
+import { submitWebsite } from '../services/api';
 
 // Simple CSS Confetti Component
 const Confetti = () => {
@@ -31,9 +30,6 @@ const Confetti = () => {
 
 const SubmitWebsite = () => {
     const navigate = useNavigate();
-    const { isConnected, walletAddress } = useWallet();
-    const [hasSubscription, setHasSubscription] = useState(null); // null = checking, true, false
-    const [checkingSub, setCheckingSub] = useState(false);
 
     const [step, setStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -45,31 +41,6 @@ const SubmitWebsite = () => {
         description: '',
         role: ''
     });
-
-    useEffect(() => {
-        const checkUserSubscription = async () => {
-            if (!isConnected || !walletAddress) {
-                setHasSubscription(false);
-                return;
-            }
-            setCheckingSub(true);
-            try {
-                const user = await getDbUser(walletAddress);
-                if (user && user.subscribedPlan) {
-                    setHasSubscription(true);
-                } else {
-                    setHasSubscription(false);
-                }
-            } catch (err) {
-                console.error("Error verifying subscription:", err);
-                setHasSubscription(false);
-            } finally {
-                setCheckingSub(false);
-            }
-        };
-
-        checkUserSubscription();
-    }, [isConnected, walletAddress]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -128,102 +99,9 @@ const SubmitWebsite = () => {
     const benefits = [
         { title: 'Increase Visibility', description: 'Reach crypto enthusiasts actively searching for platforms like yours', icon: <Sparkles className="w-6 h-6 text-yellow-500" /> },
         { title: 'Build Trust', description: 'Verified badge adds credibility to your platform', icon: <Check className="w-6 h-6 text-green-500" /> },
-        { title: 'Targeted Traffic', description: 'Users specifically interested in your niche', icon: <TrendingUpIcon /> },
-        { title: 'Free Listing', description: 'Basic listing at no cost with optional featured upgrades', icon: <AwardIcon /> }
+        { title: 'Targeted Traffic', description: 'Users specifically interested in your niche', icon: <ChevronRight className="w-6 h-6 text-indigo-500" /> },
+        { title: 'Free Listing', description: 'Basic listing at no cost with optional featured upgrades', icon: <Check className="w-6 h-6 text-primary" /> }
     ];
-
-    if (checkingSub) {
-        return (
-            <PageLayout>
-                <div className="container-custom pt-32 pb-12 flex items-center justify-center min-h-[60vh]">
-                    <div className="text-center">
-                        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-gray-500 font-bold text-sm">Verifying your subscription status...</p>
-                    </div>
-                </div>
-            </PageLayout>
-        );
-    }
-
-    if (!isConnected) {
-        return (
-            <PageLayout>
-                <div className="container-custom pt-32 pb-12 relative flex items-center justify-center min-h-[65vh]">
-                    <div className="max-w-xl w-full mx-auto">
-                        <Card className="text-center p-10 shadow-2xl border-0 ring-1 ring-gray-100/50 relative overflow-hidden bg-white/80 backdrop-blur-md rounded-3xl">
-                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10"></div>
-                            
-                            <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-inner">
-                                <Lock className="w-10 h-10 animate-bounce" />
-                            </div>
-                            
-                            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Connect Your Wallet</h2>
-                            <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-                                To submit a crypto or blockchain website, you must connect your wallet and have an active subscription plan.
-                            </p>
-                            
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button
-                                    onClick={() => navigate('/')}
-                                    className="px-6 py-3 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all text-sm flex items-center justify-center gap-2"
-                                >
-                                    <ArrowLeft className="w-4 h-4" /> Back to Home
-                                </button>
-                                <button
-                                    onClick={() => navigate('/dashboard')}
-                                    className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/35 transition-all text-sm flex items-center justify-center gap-2"
-                                >
-                                    Go to Dashboard
-                                </button>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            </PageLayout>
-        );
-    }
-
-    if (!hasSubscription) {
-        return (
-            <PageLayout>
-                <div className="container-custom pt-32 pb-12 relative flex items-center justify-center min-h-[65vh]">
-                    <div className="max-w-xl w-full mx-auto">
-                        <Card className="text-center p-10 shadow-2xl border-0 ring-1 ring-gray-100/50 relative overflow-hidden bg-white/80 backdrop-blur-md rounded-3xl">
-                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-50/20 to-orange-50/20 -z-10"></div>
-                            
-                            <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-amber-500 shadow-inner">
-                                <Crown className="w-10 h-10 animate-pulse" />
-                            </div>
-                            
-                            <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-black px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
-                                <AlertCircle className="w-3.5 h-3.5" /> Subscription Required
-                            </div>
-                            
-                            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Unlock Platform Listing</h2>
-                            <p className="text-gray-500 text-sm mb-8 leading-relaxed max-w-sm mx-auto">
-                                Listing your platform on Crypto Suggest is a premium feature. Please choose a subscription plan in your dashboard to submit websites.
-                            </p>
-                            
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button
-                                    onClick={() => navigate('/')}
-                                    className="px-6 py-3 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all text-sm flex items-center justify-center gap-2"
-                                >
-                                    <ArrowLeft className="w-4 h-4" /> Back to Home
-                                </button>
-                                <button
-                                    onClick={() => navigate('/dashboard')}
-                                    className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/35 transition-all text-sm flex items-center justify-center gap-2"
-                                >
-                                    <CreditCard className="w-4 h-4" /> Subscribe on Dashboard
-                                </button>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            </PageLayout>
-        );
-    }
 
     return (
         <PageLayout>

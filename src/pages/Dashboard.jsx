@@ -410,11 +410,6 @@ const Dashboard = () => {
     }, [walletAddress, activePlan]);
 
     const openAddProject = () => {
-        if (!activePlan) {
-            alert('Subscription required to add projects. Redirecting to subscription plans...');
-            setActiveTab('subscription');
-            return;
-        }
         setEditingProject(null);
         setProjectForm(BLANK_PROJECT);
         setProjectErrors({});
@@ -688,29 +683,6 @@ const Dashboard = () => {
                                 </button>
                             </div>
 
-                            {/* Subscription requirement banner */}
-                            {!activePlan && (
-                                <div className="bg-gradient-to-r from-amber-50 via-orange-50/40 to-yellow-50/30 border border-amber-200 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-sm">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 bg-amber-100/80 rounded-2xl flex items-center justify-center flex-shrink-0 text-amber-600">
-                                            <Crown className="w-6 h-6 animate-pulse" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-black text-gray-900 text-base">Subscription Required</h3>
-                                            <p className="text-gray-600 text-xs mt-1 max-w-xl leading-relaxed">
-                                                You need an active subscription to add new crypto or blockchain projects. Get started with our starter or pro plan to showcase your work to the community.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setActiveTab('subscription')}
-                                        className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-xs flex items-center gap-1.5 whitespace-nowrap self-stretch md:self-auto justify-center hover:scale-[1.02]"
-                                    >
-                                        <Sparkles className="w-3.5 h-3.5" /> View Subscription Plans
-                                    </button>
-                                </div>
-                            )}
-
                             {/* ── Stats bar ── */}
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                                 {[{ label: 'Total', id: 'all' }, ...PROJECT_STATUSES].map(s => {
@@ -741,46 +713,23 @@ const Dashboard = () => {
                                     ? projects
                                     : projects.filter(p => p.status === projectFilter);
 
-                                if (filtered.length === 0) {
-                                    if (!activePlan) {
-                                        return (
-                                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                                                <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-5 text-amber-500">
-                                                    <Crown className="w-10 h-10 animate-pulse" />
-                                                </div>
-                                                <p className="text-gray-700 font-bold text-lg mb-1">
-                                                    Unlock Projects Feature
-                                                </p>
-                                                <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-                                                    Showcase and manage your crypto or blockchain projects to thousands of active users. An active subscription is required to add projects.
-                                                </p>
-                                                <button
-                                                    onClick={() => setActiveTab('subscription')}
-                                                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm flex items-center gap-2 mx-auto"
-                                                >
-                                                    <Sparkles className="w-4 h-4" /> Get Subscription Plan
-                                                </button>
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                                            <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                                                <Rocket className="w-10 h-10 text-indigo-300" />
-                                            </div>
-                                            <p className="text-gray-700 font-bold text-lg mb-1">
-                                                {projectFilter === 'all' ? 'No projects yet' : `No ${PROJECT_STATUSES.find(s=>s.id===projectFilter)?.label} projects`}
-                                            </p>
-                                            <p className="text-gray-400 text-sm mb-5">Start by adding your first crypto or blockchain project</p>
-                                            <button
-                                                onClick={openAddProject}
-                                                className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
-                                            >
-                                                + Add First Project
-                                            </button>
+                                if (filtered.length === 0) return (
+                                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                        <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                                            <Rocket className="w-10 h-10 text-indigo-300" />
                                         </div>
-                                    );
-                                }
+                                        <p className="text-gray-700 font-bold text-lg mb-1">
+                                            {projectFilter === 'all' ? 'No projects yet' : `No ${PROJECT_STATUSES.find(s=>s.id===projectFilter)?.label} projects`}
+                                        </p>
+                                        <p className="text-gray-400 text-sm mb-5">Start by adding your first crypto or blockchain project</p>
+                                        <button
+                                            onClick={openAddProject}
+                                            className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
+                                        >
+                                            + Add First Project
+                                        </button>
+                                    </div>
+                                );
 
                                 return (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
