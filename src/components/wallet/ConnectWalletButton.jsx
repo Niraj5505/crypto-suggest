@@ -40,11 +40,15 @@ const ConnectWalletButton = ({ className = "" }) => {
         );
     }
 
+    const isMobile = className.includes('w-full');
+
     return (
-        <div className="relative">
+        <div className={`relative ${isMobile ? 'w-full' : ''}`}>
             <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded-xl hover:bg-indigo-100 transition-all duration-300 shadow-sm"
+                className={`flex items-center gap-2 px-5 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded-xl hover:bg-indigo-100 transition-all duration-300 shadow-sm ${
+                    isMobile ? 'w-full justify-center h-14 text-base sm:text-lg' : ''
+                }`}
             >
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                 <span>{getTruncatedAddress()}</span>
