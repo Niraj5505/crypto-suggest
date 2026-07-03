@@ -364,6 +364,7 @@ const SubmitWebsite = () => {
                                                         <option value="nft">NFT Marketplace</option>
                                                         <option value="wallet">Crypto Wallet</option>
                                                         <option value="defi">DeFi Platform</option>
+                                                        <option value="mlm">MLM Project</option>
                                                         <option value="other">Other</option>
                                                     </select>
                                                 </div>

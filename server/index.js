@@ -150,6 +150,7 @@ app.post('/api/websites/submit', async (req, res) => {
         else if (category === 'nft') dbCategory = 'NFT Marketplaces';
         else if (category === 'wallet') dbCategory = 'Crypto Wallets';
         else if (category === 'defi') dbCategory = 'DeFi Platforms';
+        else if (category === 'mlm') dbCategory = 'MLM Projects';
         else if (category === 'other') dbCategory = 'Other';
 
         // Check if website already exists
