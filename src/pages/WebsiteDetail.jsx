@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ExternalLink, Share2, Check, X, Shield, Star, Award, TrendingUp, Info, Heart, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Share2, Check, X, Shield, Star, Award, TrendingUp, Info, Heart, AlertTriangle, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PageLayout from '../components/layout/PageLayout';
 import Breadcrumb from '../components/common/Breadcrumb';
@@ -192,6 +192,9 @@ const WebsiteDetail = () => {
                                         <Badge variant="category" className="text-sm px-3 py-1">{website.category}</Badge>
                                         <span className="flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-gray-200 text-sm font-medium text-text-muted shadow-sm">
                                             <Shield className="w-4 h-4 text-green-500" /> Verified
+                                        </span>
+                                        <span className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-full border border-gray-200 text-sm font-medium text-text-muted shadow-sm">
+                                            <Eye className="w-4 h-4 text-blue-500" /> {website.views?.toLocaleString() || website.views} views
                                         </span>
                                     </div>
                                     <p className="text-xl text-text-muted leading-relaxed">{website.shortDescription}</p>

@@ -131,6 +131,8 @@ const WebsiteCard = ({ website, viewMode = 'grid', className = '' }) => {
                                 <span>{website.rating}</span>
                                 <span className="mx-1">•</span>
                                 <span className="truncate">{website.reviewCount} reviews</span>
+                                <span className="mx-1">•</span>
+                                <span className="truncate">{website.views?.toLocaleString() || website.views} views</span>
                             </div>
                         </div>
                     </div>

@@ -15,6 +15,16 @@ const cleanUrl = (url) => {
     return clean;
 };
 
+const getDeterministicViews = (name) => {
+    if (!name) return 1200;
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const base = Math.abs(hash) % 27300;
+    return base + 1200;
+};
+
 const mapWebsite = (site) => {
     if (!site) return null;
     return {
@@ -22,6 +32,7 @@ const mapWebsite = (site) => {
         id: site._id || site.id,
         url: cleanUrl(site.url),
         rating: site.trustScore || 4.0, // fallback to trustScore if rating is undefined
+        views: getDeterministicViews(site.name),
     };
 };
 
