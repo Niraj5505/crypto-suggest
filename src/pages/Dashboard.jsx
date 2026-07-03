@@ -267,6 +267,12 @@ const Dashboard = () => {
     const [subConfirm, setSubConfirm]         = useState(null);  // plan id pending confirm
     const [subSuccess, setSubSuccess]         = useState(false);
     const [openFaq, setOpenFaq]               = useState(null);
+    const [txHash, setTxHash]                 = useState('');
+    const [selectedNetwork, setSelectedNetwork] = useState('ERC20');
+    const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+    const [paymentSubmitted, setPaymentSubmitted]   = useState(false);
+    const [paymentError, setPaymentError]           = useState('');
+    const [pendingPayments, setPendingPayments]     = useState([]);
 
     /* project management state */
     const [projects, setProjects]               = useState([]);
@@ -1196,46 +1202,160 @@ const Dashboard = () => {
                                                     </div>
                                                 ) : subConfirm === plan.id ? (
                                                     <div className="space-y-3">
-                                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left">
-                                                            <p className="text-xs text-gray-700 font-bold mb-2">1. Send ${plan.price} (USDT/USDC/ETH/TRX) to:</p>
-                                                            <div className="space-y-2">
-                                                                <div>
-                                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">ERC20 / BEP20 (ETH, BSC, Polygon)</p>
-                                                                    <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>0x185018c5f26B2cE105e0B80b231178CE5913b621</p>
+                                                        {paymentSubmitted ? (
+                                                            /* ── Success state ── */
+                                                            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center space-y-2">
+                                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                                                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
                                                                 </div>
-                                                                <div>
-                                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">TRC20 (Tron)</p>
-                                                                    <p className="text-xs font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 mt-0.5" title="Click to copy" onClick={(e) => { navigator.clipboard.writeText(e.target.innerText); alert('Address copied!'); }}>TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ</p>
-                                                                </div>
+                                                                <p className="text-sm font-bold text-green-800">Payment Submitted!</p>
+                                                                <p className="text-xs text-green-700 leading-relaxed">Your payment is under admin review. Your plan will be activated within <strong>1–6 hours</strong> after verification.</p>
+                                                                <button
+                                                                    onClick={() => { setSubConfirm(null); setPaymentSubmitted(false); setTxHash(''); setPaymentError(''); }}
+                                                                    className="mt-1 text-xs text-green-700 underline font-semibold"
+                                                                >
+                                                                    Close
+                                                                </button>
                                                             </div>
-                                                        </div>
-                                                        <p className="text-xs text-gray-600 text-center font-medium">2. After sending, confirm your subscription:</p>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={async () => {
-                                                                    const sub = { planId: plan.id, subscribedAt: Date.now(), price: plan.price };
-                                                                    try {
-                                                                        await updateDbUserSubscription(walletAddress, plan.id, sub.subscribedAt);
-                                                                        setActivePlan(sub);
-                                                                        saveSubscription(walletAddress, sub);
-                                                                        setSubConfirm(null);
-                                                                        setSubSuccess(true);
-                                                                        setTimeout(() => setSubSuccess(false), 5000);
-                                                                    } catch (err) {
-                                                                        console.error('Failed to subscribe:', err);
-                                                                    }
-                                                                }}
-                                                                className={`flex-1 py-2.5 rounded-xl bg-gradient-to-r ${plan.gradient} text-white font-bold text-xs hover:shadow-lg transition-all`}
-                                                            >
-                                                                Confirm
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setSubConfirm(null)}
-                                                                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition-all"
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
+                                                        ) : (
+                                                            <>
+                                                                {/* Step 1 – Network tabs */}
+                                                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3">
+                                                                    <p className="text-xs text-gray-700 font-bold">1. Select network & send <span className="text-indigo-600">${plan.price}</span> (USDT/USDC/ETH/TRX):</p>
+
+                                                                    {/* Network Toggle */}
+                                                                    <div className="flex bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+                                                                        {['ERC20', 'TRC20'].map(net => (
+                                                                            <button
+                                                                                key={net}
+                                                                                type="button"
+                                                                                onClick={() => setSelectedNetwork(net)}
+                                                                                className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${
+                                                                                    selectedNetwork === net
+                                                                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                                                                        : 'text-gray-500 hover:text-gray-800'
+                                                                                }`}
+                                                                            >
+                                                                                {net === 'ERC20' ? 'ERC20 / BEP20' : 'TRC20 (Tron)'}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+
+                                                                    {selectedNetwork === 'ERC20' ? (
+                                                                        <div className="flex gap-3 items-start">
+                                                                            {/* QR Code ERC20 */}
+                                                                            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
+                                                                                <img
+                                                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=0x185018c5f26B2cE105e0B80b231178CE5913b621`}
+                                                                                    alt="ERC20 QR Code"
+                                                                                    className="w-20 h-20"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">ETH / BSC / Polygon</p>
+                                                                                <p
+                                                                                    className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
+                                                                                    title="Click to copy"
+                                                                                    onClick={() => { navigator.clipboard.writeText('0x185018c5f26B2cE105e0B80b231178CE5913b621'); alert('Address copied!'); }}
+                                                                                >
+                                                                                    0x185018c5f26B2cE105e0B80b231178CE5913b621
+                                                                                </p>
+                                                                                <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex gap-3 items-start">
+                                                                            {/* QR Code TRC20 */}
+                                                                            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
+                                                                                <img
+                                                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ`}
+                                                                                    alt="TRC20 QR Code"
+                                                                                    className="w-20 h-20"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">TRON Network</p>
+                                                                                <p
+                                                                                    className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
+                                                                                    title="Click to copy"
+                                                                                    onClick={() => { navigator.clipboard.writeText('TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ'); alert('Address copied!'); }}
+                                                                                >
+                                                                                    TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ
+                                                                                </p>
+                                                                                <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Step 2 – Enter TX hash */}
+                                                                <div className="space-y-1.5">
+                                                                    <p className="text-xs text-gray-700 font-bold">2. Paste your transaction hash:</p>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={txHash}
+                                                                        onChange={e => { setTxHash(e.target.value); setPaymentError(''); }}
+                                                                        placeholder="e.g. 0xabc123... or TXabc123..."
+                                                                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
+                                                                    />
+                                                                    {paymentError && (
+                                                                        <p className="text-[10px] text-red-600 font-medium">{paymentError}</p>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Submit + Cancel */}
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        disabled={paymentSubmitting}
+                                                                        onClick={async () => {
+                                                                            if (!txHash.trim()) {
+                                                                                setPaymentError('Please enter your transaction hash.');
+                                                                                return;
+                                                                            }
+                                                                            setPaymentSubmitting(true);
+                                                                            setPaymentError('');
+                                                                            try {
+                                                                                const API_URL = import.meta.env.VITE_API_URL || '/api';
+                                                                                const res = await fetch(`${API_URL}/users/${walletAddress}/subscription-payment`, {
+                                                                                    method: 'POST',
+                                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                                    body: JSON.stringify({
+                                                                                        planId: plan.id,
+                                                                                        planPrice: plan.price,
+                                                                                        network: selectedNetwork,
+                                                                                        txHash: txHash.trim()
+                                                                                    })
+                                                                                });
+                                                                                const data = await res.json();
+                                                                                if (!res.ok) {
+                                                                                    setPaymentError(data.message || 'Submission failed. Please try again.');
+                                                                                } else {
+                                                                                    setPaymentSubmitted(true);
+                                                                                    setTxHash('');
+                                                                                }
+                                                                            } catch (err) {
+                                                                                setPaymentError('Network error. Make sure the server is running.');
+                                                                            } finally {
+                                                                                setPaymentSubmitting(false);
+                                                                            }
+                                                                        }}
+                                                                        className={`flex-1 py-2.5 rounded-xl bg-gradient-to-r ${plan.gradient} text-white font-bold text-xs hover:shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed`}
+                                                                    >
+                                                                        {paymentSubmitting ? (
+                                                                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                        ) : (
+                                                                            '✅ Submit for Approval'
+                                                                        )}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => { setSubConfirm(null); setTxHash(''); setPaymentError(''); setPaymentSubmitted(false); }}
+                                                                        className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition-all"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <button

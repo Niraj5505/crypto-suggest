@@ -17,6 +17,25 @@ import {
     updateUserBlockStatus, updateUserVerifyStatus,
     createAdminProject, updateAdminProject, deleteAdminProject
 } from '../services/api';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const getAdminSubPayments = async (status) => {
+    const url = status ? `${API_URL}/admin/subscription-payments?status=${status}` : `${API_URL}/admin/subscription-payments`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch subscription payments');
+    return res.json();
+};
+
+const reviewSubPayment = async (id, action, adminNote = '') => {
+    const res = await fetch(`${API_URL}/admin/subscription-payments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, adminNote })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Action failed'); }
+    return res.json();
+};
 import logoSrc from '../assets/logo.png';
 
 /* ─────────────────── helpers ─────────────────── */
@@ -128,6 +147,7 @@ const Admin = () => {
     const [reviews,     setReviews]     = useState([]);
     const [dbUsers,     setDbUsers]     = useState([]);
     const [dbProjects,  setDbProjects]  = useState([]);
+    const [subPayments, setSubPayments] = useState([]);
     const [loading,     setLoading]     = useState(false);
 
     /* derived database subscriptions */
@@ -167,18 +187,20 @@ const Admin = () => {
         if (!isConnected) return;
         setLoading(true);
         try {
-            const [w, s, r, u, p] = await Promise.all([
+            const [w, s, r, u, p, sp] = await Promise.all([
                 getAdminWebsites(),
                 getAdminScamReports(),
                 getAdminReviews(),
                 getAdminUsers(),
-                getAdminProjects()
+                getAdminProjects(),
+                getAdminSubPayments()
             ]);
             setWebsites(w || []);
             setScamReports(s || []);
             setReviews(r || []);
             setDbUsers(u || []);
             setDbProjects(p || []);
+            setSubPayments(sp || []);
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
@@ -297,6 +319,7 @@ const Admin = () => {
     /* derived counts */
     const pendingWebsites = websites.filter(w => !w.verified).length;
     const pendingScams    = scamReports.filter(s => s.status === 'pending').length;
+    const pendingPaymentCount = subPayments.filter(p => p.status === 'pending').length;
 
     /* nav items */
     const NAV = [
@@ -306,6 +329,7 @@ const Admin = () => {
         { id: 'reviews',       label: 'Reviews',           icon: MessageSquare, badge: reviews.length || null },
         { id: 'scams',         label: 'Scam Reports',      icon: ShieldAlert,  badge: pendingScams || null },
         { id: 'subscriptions', label: 'Subscriptions',     icon: CreditCard,   badge: dbSubs.length || null },
+        { id: 'payments',      label: 'Payment Requests',  icon: CheckCircle2, badge: pendingPaymentCount || null },
         { id: 'approvals',     label: 'Site Approvals',    icon: ShieldCheck,  badge: pendingWebsites || null },
     ];
 
@@ -907,6 +931,140 @@ const Admin = () => {
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* ══════════ PAYMENT REQUESTS ══════════ */}
+                    {activeTab === 'payments' && (
+                        <div className="space-y-4">
+                            <SectionHead title="Subscription Payment Requests" count={subPayments.length} onRefresh={fetchServerData} loading={loading}>
+                                <span className="text-xs bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold px-3 py-1.5 rounded-full">{pendingPaymentCount} pending</span>
+                            </SectionHead>
+
+                            {/* Status filter */}
+                            <div className="flex gap-2 flex-wrap">
+                                {['all','pending','approved','rejected'].map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={async () => {
+                                            setLoading(true);
+                                            try { setSubPayments(await getAdminSubPayments(s === 'all' ? null : s)); }
+                                            catch(e){}
+                                            finally { setLoading(false); }
+                                        }}
+                                        className="px-3 py-1 rounded-full text-xs font-bold border capitalize transition-all hover:shadow-sm"
+                                        style={s === 'pending' ? {background:'#fef3c7',borderColor:'#fbbf24',color:'#92400e'} :
+                                               s === 'approved' ? {background:'#d1fae5',borderColor:'#34d399',color:'#065f46'} :
+                                               s === 'rejected' ? {background:'#fee2e2',borderColor:'#f87171',color:'#7f1d1d'} :
+                                               {background:'#f1f5f9',borderColor:'#cbd5e1',color:'#475569'}}
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {loading ? (
+                                <div className="py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500 mx-auto" /></div>
+                            ) : subPayments.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm py-16 text-center">
+                                    <CheckCircle2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-sm text-gray-400 font-medium">No payment requests found</p>
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    <th className="py-4 px-4 text-left">User</th>
+                                                    <th className="py-4 px-4 text-left">Plan</th>
+                                                    <th className="py-4 px-4 text-left">Network</th>
+                                                    <th className="py-4 px-4 text-left">TX Hash</th>
+                                                    <th className="py-4 px-4 text-center">Status</th>
+                                                    <th className="py-4 px-4 text-center">Date</th>
+                                                    <th className="py-4 px-4 text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {subPayments.map(payment => (
+                                                    <tr key={payment._id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="py-3 px-4">
+                                                            <div className="font-bold text-slate-800 text-xs">{payment.username || '—'}</div>
+                                                            <div className="text-[10px] text-slate-400">{payment.email || payment.walletAddress?.slice(0,12)+'...'}</div>
+                                                        </td>
+                                                        <td className="py-3 px-4">
+                                                            <span className={`text-xs font-bold px-2 py-1 rounded-lg text-white bg-gradient-to-r ${
+                                                                payment.planId === 'starter' ? 'from-blue-500 to-cyan-500' :
+                                                                payment.planId === 'pro' ? 'from-violet-600 to-purple-600' :
+                                                                'from-amber-500 to-orange-500'
+                                                            }`}>
+                                                                {payment.planId} · ${payment.planPrice}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4">
+                                                            <span className="text-xs font-mono font-bold text-indigo-600">{payment.network}</span>
+                                                        </td>
+                                                        <td className="py-3 px-4 max-w-[160px]">
+                                                            <p className="text-[10px] font-mono text-slate-600 truncate" title={payment.txHash}>{payment.txHash}</p>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-center">
+                                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${
+                                                                payment.status === 'pending' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                                                                payment.status === 'approved' ? 'bg-green-50 border-green-200 text-green-700' :
+                                                                'bg-red-50 border-red-200 text-red-700'
+                                                            }`}>
+                                                                {payment.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-center">
+                                                            <span className="text-[10px] text-slate-400">{new Date(payment.createdAt).toLocaleDateString()}</span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            {payment.status === 'pending' ? (
+                                                                <div className="flex items-center justify-end gap-1.5">
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            if (!window.confirm(`Approve ${payment.planId} plan for ${payment.username || payment.walletAddress}?`)) return;
+                                                                            try {
+                                                                                await reviewSubPayment(payment._id, 'approve');
+                                                                                showToast('Payment approved & plan activated! ✅');
+                                                                                fetchServerData();
+                                                                            } catch(e) { showToast(e.message, 'error'); }
+                                                                        }}
+                                                                        className="px-2.5 py-1 bg-green-500 text-white text-[10px] font-bold rounded-lg hover:bg-green-600 transition-colors"
+                                                                    >
+                                                                        ✓ Approve
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            const note = window.prompt('Rejection reason (optional):');
+                                                                            if (note === null) return;
+                                                                            try {
+                                                                                await reviewSubPayment(payment._id, 'reject', note);
+                                                                                showToast('Payment rejected.', 'error');
+                                                                                fetchServerData();
+                                                                            } catch(e) { showToast(e.message, 'error'); }
+                                                                        }}
+                                                                        className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-colors"
+                                                                    >
+                                                                        ✕ Reject
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] text-slate-400">
+                                                                    {payment.adminNote ? (
+                                                                        <span title={payment.adminNote}>Note: {payment.adminNote.slice(0,20)}{payment.adminNote.length > 20 ? '…' : ''}</span>
+                                                                    ) : '—'}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

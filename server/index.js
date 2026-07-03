@@ -11,6 +11,7 @@ import Review from './models/Review.js';
 import ScamReport from './models/ScamReport.js';
 import User from './models/User.js';
 import Project from './models/Project.js';
+import SubscriptionPayment from './models/SubscriptionPayment.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 // Load env variables FIRST — must be before any route or service call
@@ -551,7 +552,7 @@ app.put('/api/users/:walletAddress', async (req, res) => {
     }
 });
 
-// @desc    Update user subscription
+// @desc    Update user subscription (direct - admin bypass)
 // @route   PUT /api/users/:walletAddress/subscription
 app.put('/api/users/:walletAddress/subscription', async (req, res) => {
     try {
@@ -570,6 +571,104 @@ app.put('/api/users/:walletAddress/subscription', async (req, res) => {
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Server Error updating user subscription', error: error.message });
+    }
+});
+
+// @desc    Submit subscription payment for admin approval
+// @route   POST /api/users/:walletAddress/subscription-payment
+app.post('/api/users/:walletAddress/subscription-payment', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const { planId, planPrice, network, txHash } = req.body;
+
+        if (!planId || !planPrice || !network || !txHash) {
+            return res.status(400).json({ message: 'planId, planPrice, network, and txHash are all required.' });
+        }
+
+        // Prevent duplicate txHash submissions
+        const exists = await SubscriptionPayment.findOne({ txHash });
+        if (exists) {
+            return res.status(400).json({ message: 'This transaction hash has already been submitted.' });
+        }
+
+        const user = await User.findOne({ walletAddress });
+
+        const payment = new SubscriptionPayment({
+            walletAddress,
+            userId: user?._id,
+            username: user?.username,
+            email: user?.email,
+            planId,
+            planPrice,
+            network,
+            txHash: txHash.trim(),
+            status: 'pending'
+        });
+
+        await payment.save();
+        res.status(201).json({ success: true, message: 'Payment submitted for admin review. Your plan will be activated shortly.', payment });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error submitting payment', error: error.message });
+    }
+});
+
+// @desc    Get pending subscription payments for a user
+// @route   GET /api/users/:walletAddress/subscription-payment
+app.get('/api/users/:walletAddress/subscription-payment', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const payments = await SubscriptionPayment.find({ walletAddress }).sort({ createdAt: -1 }).limit(5);
+        res.json(payments);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching payment history', error: error.message });
+    }
+});
+
+// @desc    Get all subscription payment requests (Admin)
+// @route   GET /api/admin/subscription-payments
+app.get('/api/admin/subscription-payments', async (req, res) => {
+    try {
+        const { status } = req.query;
+        const filter = status ? { status } : {};
+        const payments = await SubscriptionPayment.find(filter).sort({ createdAt: -1 });
+        res.json(payments);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching subscription payments', error: error.message });
+    }
+});
+
+// @desc    Approve or reject a subscription payment (Admin)
+// @route   PUT /api/admin/subscription-payments/:id
+app.put('/api/admin/subscription-payments/:id', async (req, res) => {
+    try {
+        const { action, adminNote } = req.body; // action: 'approve' | 'reject'
+        const payment = await SubscriptionPayment.findById(req.params.id);
+        if (!payment) return res.status(404).json({ message: 'Payment not found' });
+
+        if (action === 'approve') {
+            payment.status = 'approved';
+            payment.reviewedAt = new Date();
+            payment.adminNote = adminNote || '';
+
+            // Activate the user's subscription
+            const user = await User.findOne({ walletAddress: payment.walletAddress });
+            if (user) {
+                user.subscribedPlan = payment.planId;
+                user.subscribedAt = Date.now();
+                await user.save();
+            }
+        } else if (action === 'reject') {
+            payment.status = 'rejected';
+            payment.reviewedAt = new Date();
+            payment.adminNote = adminNote || '';
+        } else {
+            return res.status(400).json({ message: 'action must be approve or reject' });
+        }
+
+        await payment.save();
+        res.json({ success: true, payment });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error reviewing payment', error: error.message });
     }
 });
 
