@@ -990,6 +990,9 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         // Compare password
+        if (!user.password) {
+            return res.status(400).json({ message: 'Invalid credentials. Password is not set for this account.' });
+        }
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials. Incorrect password.' });
