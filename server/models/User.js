@@ -3,11 +3,33 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
     walletAddress: {
         type: String,
-        required: true,
+        trim: true,
+        lowercase: true,
+        sparse: true
+    },
+    username: {
+        type: String,
         unique: true,
         trim: true,
         lowercase: true,
-        index: true
+        sparse: true
+    },
+    email: {
+        type: String,
+        unique: true,
+        trim: true,
+        lowercase: true,
+        sparse: true
+    },
+    mobile: {
+        type: String,
+        unique: true,
+        trim: true,
+        sparse: true
+    },
+    password: {
+        type: String,
+        required: true
     },
     displayName: {
         type: String,

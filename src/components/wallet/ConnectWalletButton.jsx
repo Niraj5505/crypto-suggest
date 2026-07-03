@@ -30,7 +30,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                     onClick={() => setIsModalOpen(true)}
                     className={`px-5 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 ${className}`}
                 >
-                    Connect Wallet
+                    Sign In / Register
                 </button>
                 <WalletConnectionModal
                     isOpen={isModalOpen}
@@ -44,9 +44,9 @@ const ConnectWalletButton = ({ className = "" }) => {
         <div className="relative">
             <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 px-6 py-3 bg-green-50 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition-all duration-300"
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded-xl hover:bg-indigo-100 transition-all duration-300 shadow-sm"
             >
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                 <span>{getTruncatedAddress()}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -60,8 +60,8 @@ const ConnectWalletButton = ({ className = "" }) => {
                     />
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-fade-in">
                         <div className="p-4 border-b border-gray-100">
-                            <div className="text-xs text-text-muted mb-1">Connected Wallet</div>
-                            <div className="font-mono text-sm text-text-main break-all">
+                            <div className="text-xs text-text-muted mb-1">Logged in as</div>
+                            <div className="font-bold text-sm text-text-main break-all">
                                 {getTruncatedAddress()}
                             </div>
                         </div>
@@ -72,7 +72,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left"
                         >
                             <LayoutDashboard className="w-4 h-4 text-primary" />
-                            <span className="text-primary font-semibold">My Dashboard</span>
+                            <span className="text-primary font-bold">My Dashboard</span>
                         </Link>
 
                         <button
@@ -87,7 +87,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                             ) : (
                                 <>
                                     <Copy className="w-4 h-4 text-text-muted" />
-                                    <span className="text-text-main">Copy Address</span>
+                                    <span className="text-text-main">Copy Wallet ID</span>
                                 </>
                             )}
                         </button>
@@ -97,7 +97,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 transition-colors text-left border-t border-gray-100"
                         >
                             <LogOut className="w-4 h-4 text-red-600" />
-                            <span className="text-red-600 font-medium">Disconnect</span>
+                            <span className="text-red-600 font-bold">Logout</span>
                         </button>
                     </div>
                 </>

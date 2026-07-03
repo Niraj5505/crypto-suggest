@@ -13,131 +13,135 @@ export const useWallet = () => {
 export const WalletProvider = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [walletAddress, setWalletAddress] = useState(null);
-    const [walletType, setWalletType] = useState(null);
+    const [walletType, setWalletType] = useState('Credentials');
     const [connectedAt, setConnectedAt] = useState(null);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // Check if wallet is already connected on load
+    // load user profile from token on startup
     useEffect(() => {
-        if (import.meta.env.DEV && !window.ethereum) {
-            window.ethereum = {
-                request: async ({ method }) => {
-                    if (method === 'eth_accounts' || method === 'eth_requestAccounts') {
-                        return ['0x71c7656ec7ab88b098defb751b7401b5f6d8976f'];
-                    }
-                    return [];
-                },
-                on: () => {},
-                removeListener: () => {}
-            };
-        }
-
-        const checkWalletConnected = async () => {
-            if (window.ethereum) {
+        const initAuth = async () => {
+            const token = localStorage.getItem('authToken');
+            const savedConnection = localStorage.getItem('walletConnection');
+            if (token && savedConnection) {
                 try {
-                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                    if (accounts.length > 0) {
-                        setIsConnected(true);
-                        setWalletAddress(accounts[0]);
-                        setWalletType('MetaMask');
-                        
-                        const savedConnection = localStorage.getItem('walletConnection');
-                        if (savedConnection) {
-                            try {
-                                const connection = JSON.parse(savedConnection);
-                                setConnectedAt(connection.connectedAt);
-                            } catch (e) {
-                                setConnectedAt(Date.now());
-                            }
-                        } else {
-                            setConnectedAt(Date.now());
+                    const conn = JSON.parse(savedConnection);
+                    const API_URL = import.meta.env.VITE_API_URL || '/api';
+                    const response = await fetch(`${API_URL}/auth/profile`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
                         }
+                    });
+                    if (response.ok) {
+                        const profile = await response.json();
+                        setIsConnected(true);
+                        setWalletAddress(profile.walletAddress);
+                        setUser(profile);
+                        setConnectedAt(conn.connectedAt || Date.now());
+                    } else {
+                        logout();
                     }
-                } catch (error) {
-                    console.error('Error checking wallet connection:', error);
+                } catch (e) {
+                    console.error('Failed to initialize auth:', e);
+                    try {
+                        const conn = JSON.parse(savedConnection);
+                        setIsConnected(true);
+                        setWalletAddress(conn.address);
+                        setConnectedAt(conn.connectedAt);
+                        setUser({
+                            username: conn.username,
+                            email: conn.email,
+                            walletAddress: conn.address
+                        });
+                    } catch (_) {}
                 }
             }
+            setLoading(false);
         };
-        checkWalletConnected();
+        initAuth();
     }, []);
 
-    // Listen for accountsChanged and disconnect events
-    useEffect(() => {
-        if (window.ethereum) {
-            const handleAccountsChanged = (accounts) => {
-                if (accounts.length > 0) {
-                    setIsConnected(true);
-                    setWalletAddress(accounts[0]);
-                    setWalletType('MetaMask');
-                    
-                    const connection = {
-                        isConnected: true,
-                        address: accounts[0],
-                        type: 'MetaMask',
-                        connectedAt: Date.now()
-                    };
-                    localStorage.setItem('walletConnection', JSON.stringify(connection));
-                } else {
-                    disconnectWallet();
-                }
-            };
-
-            window.ethereum.on('accountsChanged', handleAccountsChanged);
-
-            return () => {
-                if (window.ethereum.removeListener) {
-                    window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-                }
-            };
-        }
-    }, []);
-
-    // Connect wallet using window.ethereum
-    const connectWallet = async (type = 'MetaMask') => {
-        if (!window.ethereum) {
-            alert('🦊 MetaMask not detected! Please install MetaMask extension to connect your wallet.');
-            return { success: false, error: 'No provider' };
-        }
-
+    const register = async (username, email, mobile, password, referrer = null) => {
         try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            if (accounts.length > 0) {
-                const address = accounts[0];
-                const timestamp = Date.now();
-
-                setIsConnected(true);
-                setWalletAddress(address);
-                setWalletType(type);
-                setConnectedAt(timestamp);
-
-                const connection = {
-                    isConnected: true,
-                    address,
-                    type,
-                    connectedAt: timestamp
-                };
-                localStorage.setItem('walletConnection', JSON.stringify(connection));
-
-                return { success: true, address };
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, mobile, password, referrer })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                return { success: false, error: data.message || 'Registration failed' };
             }
-            return { success: false, error: 'No accounts' };
-        } catch (error) {
-            console.error('Failed to connect wallet:', error);
-            alert(`❌ Failed to connect wallet: ${error.message}`);
-            return { success: false, error: error.message };
+
+            localStorage.setItem('authToken', data.token);
+            const connection = {
+                isConnected: true,
+                address: data.user.walletAddress,
+                username: data.user.username,
+                email: data.user.email,
+                connectedAt: Date.now()
+            };
+            localStorage.setItem('walletConnection', JSON.stringify(connection));
+
+            setIsConnected(true);
+            setWalletAddress(data.user.walletAddress);
+            setConnectedAt(connection.connectedAt);
+            setUser(data.user);
+
+            return { success: true, user: data.user };
+        } catch (e) {
+            return { success: false, error: e.message };
         }
     };
 
-    // Disconnect wallet
-    const disconnectWallet = () => {
+    const login = async (identifier, password) => {
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                return { success: false, error: data.message || 'Login failed' };
+            }
+
+            localStorage.setItem('authToken', data.token);
+            const connection = {
+                isConnected: true,
+                address: data.user.walletAddress,
+                username: data.user.username,
+                email: data.user.email,
+                connectedAt: Date.now()
+            };
+            localStorage.setItem('walletConnection', JSON.stringify(connection));
+
+            setIsConnected(true);
+            setWalletAddress(data.user.walletAddress);
+            setConnectedAt(connection.connectedAt);
+            setUser(data.user);
+
+            return { success: true, user: data.user };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    };
+
+    const logout = () => {
         setIsConnected(false);
         setWalletAddress(null);
-        setWalletType(null);
         setConnectedAt(null);
+        setUser(null);
+        localStorage.removeItem('authToken');
         localStorage.removeItem('walletConnection');
     };
 
-    // Get truncated address for display
     const getTruncatedAddress = () => {
+        if (user && user.username) {
+            return `@${user.username}`;
+        }
         if (!walletAddress) return '';
         return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
     };
@@ -145,10 +149,15 @@ export const WalletProvider = ({ children }) => {
     const value = {
         isConnected,
         walletAddress,
-        walletType,
+        walletType: 'Credentials',
         connectedAt,
-        connectWallet,
-        disconnectWallet,
+        user,
+        loading,
+        register,
+        login,
+        logout,
+        disconnectWallet: logout,
+        connectWallet: login,
         getTruncatedAddress
     };
 

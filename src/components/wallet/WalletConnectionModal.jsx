@@ -1,54 +1,82 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Mail, Phone, User, Lock, Sparkles, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 
 const WalletConnectionModal = ({ isOpen, onClose }) => {
-    const { connectWallet } = useWallet();
+    const { login, register } = useWallet();
     const navigate = useNavigate();
-    const [isConnecting, setIsConnecting] = useState(false);
-    const [selectedWallet, setSelectedWallet] = useState(null);
+    
+    const [isLoginTab, setIsLoginTab] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+
+    // Sign In Fields
+    const [loginId, setLoginId] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+
+    // Sign Up Fields
+    const [signUpUsername, setSignUpUsername] = useState('');
+    const [signUpEmail, setSignUpEmail] = useState('');
+    const [signUpMobile, setSignUpMobile] = useState('');
+    const [signUpPassword, setSignUpPassword] = useState('');
+    const [signUpReferrer, setSignUpReferrer] = useState('');
 
     if (!isOpen) return null;
 
-    const walletOptions = [
-        {
-            id: 'metamask',
-            name: 'MetaMask',
-            icon: '🦊',
-            description: 'Connect with MetaMask wallet'
-        },
-        {
-            id: 'walletconnect',
-            name: 'WalletConnect',
-            icon: '🔗',
-            description: 'Scan with WalletConnect'
-        },
-        {
-            id: 'coinbase',
-            name: 'Coinbase Wallet',
-            icon: '💼',
-            description: 'Connect with Coinbase'
+    const handleLoginSubmit = async (e) => {
+        e.preventDefault();
+        if (!loginId || !loginPassword) {
+            setErrorMsg('Please enter both your identifier and password.');
+            return;
         }
-    ];
 
-    const handleConnect = async (walletType) => {
-        setSelectedWallet(walletType);
-        setIsConnecting(true);
-
+        setIsLoading(true);
+        setErrorMsg('');
         try {
-            const result = await connectWallet(walletType);
-            if (result?.success) {
+            const result = await login(loginId, loginPassword);
+            if (result.success) {
                 onClose();
                 navigate('/dashboard');
             } else {
-                onClose();
+                setErrorMsg(result.error || 'Failed to sign in. Please check your credentials.');
             }
         } catch (error) {
-            console.error('Connection failed:', error);
+            setErrorMsg('An unexpected error occurred. Please try again.');
+            console.error(error);
         } finally {
-            setIsConnecting(false);
-            setSelectedWallet(null);
+            setIsLoading(false);
+        }
+    };
+
+    const handleRegisterSubmit = async (e) => {
+        e.preventDefault();
+        if (!signUpUsername || !signUpEmail || !signUpMobile || !signUpPassword) {
+            setErrorMsg('All fields except referral are required.');
+            return;
+        }
+
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            const result = await register(
+                signUpUsername,
+                signUpEmail,
+                signUpMobile,
+                signUpPassword,
+                signUpReferrer
+            );
+            if (result.success) {
+                onClose();
+                navigate('/dashboard');
+            } else {
+                setErrorMsg(result.error || 'Registration failed. Try a different username/email.');
+            }
+        } catch (error) {
+            setErrorMsg('An unexpected error occurred. Please try again.');
+            console.error(error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -56,58 +84,223 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fade-in">
+            {/* Modal Container */}
+            <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in border border-slate-100 z-10">
+                {/* Visual Top Bar */}
+                <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600"></div>
+
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="absolute top-5 right-5 p-2 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-full transition-colors z-20"
+                    aria-label="Close dialog"
                 >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X className="w-4 h-4" />
                 </button>
 
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-text-main mb-3">Connect Wallet</h2>
-                    <p className="text-text-muted text-lg">
-                        Connect your wallet to submit a review. Browsing is always free.
-                    </p>
-                </div>
+                <div className="p-8">
+                    {/* Brand / Logo Mockup */}
+                    <div className="text-center mb-6">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                            💎
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                            {isLoginTab ? 'Welcome Back' : 'Create Account'}
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {isLoginTab 
+                                ? 'Sign in to access your dashboard & verify platforms' 
+                                : 'Join our community of crypto enthusiasts & partners'}
+                        </p>
+                    </div>
 
-                {/* Wallet Options */}
-                <div className="space-y-3">
-                    {walletOptions.map((wallet) => (
+                    {/* Auth Toggle Tabs */}
+                    <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
                         <button
-                            key={wallet.id}
-                            onClick={() => handleConnect(wallet.name)}
-                            disabled={isConnecting}
-                            className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${isConnecting && selectedWallet === wallet.name
-                                    ? 'border-primary bg-primary/5 scale-95'
-                                    : 'border-gray-200 hover:border-primary hover:bg-primary/5 hover:scale-102'
-                                } ${isConnecting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                            type="button"
+                            onClick={() => { setIsLoginTab(true); setErrorMsg(''); }}
+                            className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 ${
+                                isLoginTab 
+                                    ? 'bg-white text-indigo-600 shadow-sm' 
+                                    : 'text-gray-500 hover:text-gray-800'
+                            }`}
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="text-4xl">{wallet.icon}</div>
-                                <div className="flex-1 text-left">
-                                    <div className="font-bold text-lg text-text-main">{wallet.name}</div>
-                                    <div className="text-sm text-text-muted">{wallet.description}</div>
-                                </div>
-                                {isConnecting && selectedWallet === wallet.name && (
-                                    <div className="w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                                )}
-                            </div>
+                            Sign In
                         </button>
-                    ))}
+                        <button
+                            type="button"
+                            onClick={() => { setIsLoginTab(false); setErrorMsg(''); }}
+                            className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 ${
+                                !isLoginTab 
+                                    ? 'bg-white text-indigo-600 shadow-sm' 
+                                    : 'text-gray-500 hover:text-gray-800'
+                            }`}
+                        >
+                            Register
+                        </button>
+                    </div>
+
+                    {/* Error Alerts */}
+                    {errorMsg && (
+                        <div className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-150 rounded-2xl p-3.5 text-red-700 text-xs font-medium animate-shake">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-650" />
+                            <span>{errorMsg}</span>
+                        </div>
+                    )}
+
+                    {/* Forms */}
+                    {isLoginTab ? (
+                        /* ── SIGN IN FORM ── */
+                        <form onSubmit={handleLoginSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Username, Email, or Mobile</label>
+                                <div className="relative">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={loginId}
+                                        onChange={(e) => setLoginId(e.target.value)}
+                                        placeholder="e.g. satoshi / admin@site.com"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full mt-2 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    'Sign In'
+                                )}
+                            </button>
+                        </form>
+                    ) : (
+                        /* ── REGISTER FORM ── */
+                        <form onSubmit={handleRegisterSubmit} className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Username</label>
+                                <div className="relative">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={signUpUsername}
+                                        onChange={(e) => setSignUpUsername(e.target.value)}
+                                        placeholder="e.g. cryptoking"
+                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="email"
+                                        value={signUpEmail}
+                                        onChange={(e) => setSignUpEmail(e.target.value)}
+                                        placeholder="name@example.com"
+                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Mobile Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="tel"
+                                        value={signUpMobile}
+                                        onChange={(e) => setSignUpMobile(e.target.value)}
+                                        placeholder="+1 (555) 000-0000"
+                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="password"
+                                        value={signUpPassword}
+                                        onChange={(e) => setSignUpPassword(e.target.value)}
+                                        placeholder="Min 6 characters"
+                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Referrer username (Optional)</label>
+                                <div className="relative">
+                                    <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500" />
+                                    <input
+                                        type="text"
+                                        value={signUpReferrer}
+                                        onChange={(e) => setSignUpReferrer(e.target.value)}
+                                        placeholder="Referrer's username or code"
+                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full mt-3 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    'Create Account'
+                                )}
+                            </button>
+                        </form>
+                    )}
                 </div>
 
-                {/* Footer */}
-                <div className="mt-6 text-center">
-                    <p className="text-xs text-text-muted">
-                        By connecting, you agree to our Terms of Service
+                {/* Footer terms */}
+                <div className="bg-slate-50 py-4 px-8 text-center border-t border-slate-100">
+                    <p className="text-[10px] text-gray-400">
+                        By continuing, you agree to our Terms of Service & Privacy Policy.
                     </p>
                 </div>
             </div>

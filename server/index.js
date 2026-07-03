@@ -11,6 +11,8 @@ import Review from './models/Review.js';
 import ScamReport from './models/ScamReport.js';
 import User from './models/User.js';
 import Project from './models/Project.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 // Load env variables FIRST — must be before any route or service call
 dotenv.config();
 
@@ -803,7 +805,220 @@ app.delete('/api/admin/projects/:id', async (req, res) => {
     }
 });
 
+// Helper to generate deterministic mock wallet address
+const generateMockWallet = (username) => {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const cleanHash = Math.abs(hash).toString(16).padEnd(40, 'f').slice(0, 40);
+    return `0x${cleanHash}`;
+};
 
+// Middleware to authenticate JWT token
+const protect = async (req, res, next) => {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123');
+            req.user = await User.findById(decoded.id).select('-password');
+            if (!req.user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
+            next();
+        } catch (error) {
+            console.error('Auth middleware error:', error);
+            res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+    } else {
+        res.status(401).json({ message: 'Not authorized, no token' });
+    }
+};
+
+// @desc    Register a new user
+// @route   POST /api/auth/register
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { username, email, mobile, password, referrer } = req.body;
+
+        if (!username || !email || !mobile || !password) {
+            return res.status(400).json({ message: 'All registration fields (username, email, mobile, password) are required.' });
+        }
+
+        // Check if username, email or mobile already exists
+        const userExists = await User.findOne({
+            $or: [
+                { username: username.toLowerCase().trim() },
+                { email: email.toLowerCase().trim() },
+                { mobile: mobile.trim() }
+            ]
+        });
+
+        if (userExists) {
+            if (userExists.username === username.toLowerCase().trim()) {
+                return res.status(400).json({ message: 'Username is already taken.' });
+            }
+            if (userExists.email === email.toLowerCase().trim()) {
+                return res.status(400).json({ message: 'Email is already registered.' });
+            }
+            if (userExists.mobile === mobile.trim()) {
+                return res.status(400).json({ message: 'Mobile number is already registered.' });
+            }
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const walletAddress = generateMockWallet(username.toLowerCase().trim());
+
+        // Check for referredBy logic (referrals system)
+        let referredBy = null;
+        if (referrer) {
+            const referrerAddress = referrer.toLowerCase().trim();
+            const referrerUser = await User.findOne({
+                $or: [
+                    { walletAddress: referrerAddress },
+                    { username: referrerAddress },
+                    { email: referrerAddress }
+                ]
+            });
+            if (referrerUser && referrerUser.walletAddress !== walletAddress) {
+                referredBy = referrerUser.walletAddress;
+                referrerUser.referralCount = (referrerUser.referralCount || 0) + 1;
+                await referrerUser.save();
+            }
+        }
+
+        const newUser = new User({
+            walletAddress,
+            username: username.toLowerCase().trim(),
+            email: email.toLowerCase().trim(),
+            mobile: mobile.trim(),
+            password: hashedPassword,
+            displayName: username,
+            referredBy
+        });
+
+        await newUser.save();
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: newUser._id, walletAddress: newUser.walletAddress, email: newUser.email },
+            process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123',
+            { expiresIn: '30d' }
+        );
+
+        res.status(201).json({
+            success: true,
+            token,
+            user: {
+                id: newUser._id,
+                walletAddress: newUser.walletAddress,
+                username: newUser.username,
+                email: newUser.email,
+                mobile: newUser.mobile,
+                displayName: newUser.displayName
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error registering user', error: error.message });
+    }
+});
+
+// @desc    Login user
+// @route   POST /api/auth/login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { identifier, password } = req.body; // identifier can be email, mobile, or username
+
+        if (!identifier || !password) {
+            return res.status(400).json({ message: 'Identifier and password are required.' });
+        }
+
+        const trimmedIdentifier = identifier.trim().toLowerCase();
+
+        // Find user by username, email, or mobile
+        const user = await User.findOne({
+            $or: [
+                { username: trimmedIdentifier },
+                { email: trimmedIdentifier },
+                { mobile: identifier.trim() }
+            ]
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid credentials. User not found.' });
+        }
+
+        // Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials. Incorrect password.' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user._id, walletAddress: user.walletAddress, email: user.email },
+            process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123',
+            { expiresIn: '30d' }
+        );
+
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                walletAddress: user.walletAddress,
+                username: user.username,
+                email: user.email,
+                mobile: user.mobile,
+                displayName: user.displayName,
+                subscribedPlan: user.subscribedPlan
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error logging in', error: error.message });
+    }
+});
+
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+app.get('/api/auth/profile', protect, async (req, res) => {
+    try {
+        res.json(req.user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching user profile', error: error.message });
+    }
+});
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+app.put('/api/auth/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (user) {
+            const { displayName, bio, location, website, twitter, github, linkedin, avatarEmoji, avatarBg } = req.body;
+            if (displayName !== undefined) user.displayName = displayName;
+            if (bio !== undefined) user.bio = bio;
+            if (location !== undefined) user.location = location;
+            if (website !== undefined) user.website = website;
+            if (twitter !== undefined) user.twitter = twitter;
+            if (github !== undefined) user.github = github;
+            if (linkedin !== undefined) user.linkedin = linkedin;
+            if (avatarEmoji !== undefined) user.avatarEmoji = avatarEmoji;
+            if (avatarBg !== undefined) user.avatarBg = avatarBg;
+            
+            const updatedUser = await user.save();
+            res.json(updatedUser);
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user profile', error: error.message });
+    }
+});
 
 const PORT = process.env.PORT || 5000;
 
