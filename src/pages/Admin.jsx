@@ -6,23 +6,33 @@ import {
     CreditCard, BarChart2, RefreshCw, Eye, Star, Flag,
     Search, ChevronDown, TrendingUp, Crown, Zap, Gem,
     CheckCircle2, Clock, Globe, Hash, Calendar, Filter,
-    Plus, PenLine
+    Plus, PenLine, Lock, Mail, EyeOff, LogOut
 } from 'lucide-react';
-import { useWallet } from '../contexts/WalletContext';
 import Button from '../components/common/Button';
 import {
     getAdminWebsites, verifyWebsite, deleteWebsite,
     getAdminScamReports, updateScamReportStatus,
     getAdminReviews, deleteReview, getAdminUsers, getAdminProjects,
     updateUserBlockStatus, updateUserVerifyStatus,
-    createAdminProject, updateAdminProject, deleteAdminProject
+    createAdminProject, updateAdminProject, deleteAdminProject,
+    loginAdmin
 } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+const getAdminHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+};
+
 const getAdminSubPayments = async (status) => {
     const url = status ? `${API_URL}/admin/subscription-payments?status=${status}` : `${API_URL}/admin/subscription-payments`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+        headers: getAdminHeaders()
+    });
     if (!res.ok) throw new Error('Failed to fetch subscription payments');
     return res.json();
 };
@@ -30,7 +40,7 @@ const getAdminSubPayments = async (status) => {
 const reviewSubPayment = async (id, action, adminNote = '') => {
     const res = await fetch(`${API_URL}/admin/subscription-payments/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders(),
         body: JSON.stringify({ action, adminNote })
     });
     if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Action failed'); }
@@ -138,7 +148,12 @@ const Empty = ({ icon: Icon, text }) => (
 
 /* ─────────────────── ADMIN COMPONENT ─────────────────── */
 const Admin = () => {
-    const { isConnected, walletAddress, connectWallet, getTruncatedAddress } = useWallet();
+    const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(!!localStorage.getItem('adminToken'));
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
     /* server data */
@@ -182,9 +197,34 @@ const Admin = () => {
         setTimeout(() => setToast(null), 3500);
     };
 
+    const handleLoginSubmit = async (e) => {
+        e.preventDefault();
+        setLoginError('');
+        setLoginLoading(true);
+        try {
+            const data = await loginAdmin(email, password);
+            localStorage.setItem('adminToken', data.token);
+            setIsAdminLoggedIn(true);
+            showToast('Welcome back, Admin!');
+        } catch (err) {
+            setLoginError(err.message || 'Invalid credentials');
+            showToast(err.message || 'Invalid credentials', 'error');
+        } finally {
+            setLoginLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('adminToken');
+        setIsAdminLoggedIn(false);
+        setEmail('');
+        setPassword('');
+        showToast('Logged out successfully');
+    };
+
     /* ── fetch server data ── */
     const fetchServerData = async () => {
-        if (!isConnected) return;
+        if (!isAdminLoggedIn) return;
         setLoading(true);
         try {
             const [w, s, r, u, p, sp] = await Promise.all([
@@ -205,7 +245,7 @@ const Admin = () => {
         finally { setLoading(false); }
     };
 
-    useEffect(() => { fetchServerData(); }, [isConnected]);
+    useEffect(() => { fetchServerData(); }, [isAdminLoggedIn]);
 
     /* actions */
     const handleApprove = async (slug) => {
@@ -334,20 +374,87 @@ const Admin = () => {
     ];
 
     /* ── not connected ── */
-    if (!isConnected) return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-            <div className="bg-white p-10 rounded-[2rem] shadow-xl max-w-md w-full border border-gray-100">
-                <div className="w-20 h-20 bg-blue-50 text-primary rounded-full flex items-center justify-center mb-6 mx-auto">
-                    <Wallet className="w-10 h-10" />
+    if (!isAdminLoggedIn) return (
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden font-sans">
+            {/* Background ambient light shapes */}
+            <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="backdrop-blur-xl bg-slate-900/40 border border-slate-800/80 p-8 sm:p-10 rounded-[2rem] shadow-2xl max-w-md w-full relative z-10 transition-all animate-in fade-in zoom-in-95 duration-300">
+                {/* Logo and title */}
+                <div className="mb-8 animate-in slide-in-from-bottom duration-500 delay-100 fill-mode-both">
+                    <div className="w-16 h-16 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                        <ShieldCheck className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-2xl font-black text-white tracking-tight">Admin Portal</h1>
+                    <p className="text-slate-400 mt-1.5 text-xs font-semibold uppercase tracking-wider">Access Panel Auth</p>
                 </div>
-                <h1 className="text-2xl font-bold text-slate-800 mb-3">Admin Authentication</h1>
-                <p className="text-slate-500 mb-8 text-sm">Connect your authorized crypto wallet to access the admin panel.</p>
-                <Button variant="primary" className="w-full py-3.5 flex items-center justify-center gap-2 font-bold" onClick={() => connectWallet()}>
-                    Connect Wallet
-                </Button>
-                <Link to="/" className="text-sm font-semibold text-slate-400 hover:text-slate-700 transition-colors py-3 block">
-                    ← Back to Public Directory
-                </Link>
+
+                {/* Form */}
+                <form onSubmit={handleLoginSubmit} className="space-y-5 text-left animate-in slide-in-from-bottom duration-500 delay-200 fill-mode-both">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email ID</label>
+                        <div className="relative">
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="Enter admin email"
+                                className="w-full bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all font-semibold"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+                        <div className="relative">
+                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                placeholder="Enter admin password"
+                                className="w-full bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 rounded-xl py-3 pl-11 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition-all font-semibold"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {loginError && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-xs font-semibold flex items-center gap-2 animate-shake">
+                            <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                            <span>{loginError}</span>
+                        </div>
+                    )}
+
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        className="w-full py-3.5 flex items-center justify-center gap-2 font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-none text-white shadow-[0_4px_20px_rgba(37,99,235,0.25)] hover:shadow-[0_4px_25px_rgba(37,99,235,0.35)] transition-all rounded-xl mt-6"
+                        disabled={loginLoading}
+                    >
+                        {loginLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <span>Access Panel</span>
+                        )}
+                    </Button>
+                </form>
+
+                <div className="mt-8 pt-6 border-t border-slate-800/60 animate-in slide-in-from-bottom duration-500 delay-300 fill-mode-both">
+                    <Link to="/" className="text-xs font-bold text-slate-500 hover:text-slate-300 transition-colors inline-flex items-center gap-1">
+                        ← Back to Directory
+                    </Link>
+                </div>
             </div>
         </div>
     );
@@ -379,11 +486,11 @@ const Admin = () => {
                         </div>
                     </div>
 
-                    {/* Wallet pill */}
+                    {/* Email pill */}
                     <div className="px-4 py-3 border-b border-slate-800">
                         <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2.5">
                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-                            <span className="font-mono text-xs text-slate-300 truncate">{getTruncatedAddress()}</span>
+                            <span className="font-mono text-xs text-slate-300 truncate">admin@gmail.com</span>
                         </div>
                     </div>
 
@@ -413,7 +520,14 @@ const Admin = () => {
                     </nav>
                 </div>
 
-                <div className="p-3 border-t border-slate-800">
+                <div className="p-3 border-t border-slate-800 space-y-1">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-red-400 hover:bg-slate-800 hover:text-red-300 transition-all text-sm text-left"
+                    >
+                        <LogOut className="w-4 h-4 flex-shrink-0" />
+                        <span>Log Out</span>
+                    </button>
                     <Link to="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all text-sm">
                         <LayoutGrid className="w-4 h-4" />
                         <span>Public Directory</span>
@@ -436,7 +550,7 @@ const Admin = () => {
                         </button>
                         <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-xl">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            <span className="font-mono text-xs font-bold text-slate-700">{getTruncatedAddress()}</span>
+                            <span className="font-mono text-xs font-bold text-slate-700">admin@gmail.com</span>
                         </div>
                     </div>
                 </header>

@@ -363,11 +363,33 @@ app.get('/api/rankings', async (req, res) => {
     }
 });
 
+// Middleware to authenticate Admin JWT token
+const adminProtect = async (req, res, next) => {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123');
+            if (decoded.email === 'admin@gmail.com' && decoded.isAdmin === true) {
+                req.admin = decoded;
+                next();
+            } else {
+                return res.status(403).json({ message: 'Not authorized as admin' });
+            }
+        } catch (error) {
+            console.error('Admin auth middleware error:', error);
+            res.status(401).json({ message: 'Not authorized, admin token failed' });
+        }
+    } else {
+        res.status(401).json({ message: 'Not authorized, no admin token' });
+    }
+};
+
 // Admin Panel Routes
 
 // @desc    Get all websites (verified and unverified)
 // @route   GET /api/admin/websites
-app.get('/api/admin/websites', async (req, res) => {
+app.get('/api/admin/websites', adminProtect, async (req, res) => {
     try {
         const websites = await Website.find().sort({ createdAt: -1 });
         res.json(websites);
@@ -378,7 +400,7 @@ app.get('/api/admin/websites', async (req, res) => {
 
 // @desc    Verify/Approve a website
 // @route   PUT /api/admin/websites/:slug/verify
-app.put('/api/admin/websites/:slug/verify', async (req, res) => {
+app.put('/api/admin/websites/:slug/verify', adminProtect, async (req, res) => {
     try {
         const website = await Website.findOne({ slug: req.params.slug });
         if (!website) {
@@ -402,7 +424,7 @@ app.put('/api/admin/websites/:slug/verify', async (req, res) => {
 
 // @desc    Reject/Delete a website
 // @route   DELETE /api/admin/websites/:slug
-app.delete('/api/admin/websites/:slug', async (req, res) => {
+app.delete('/api/admin/websites/:slug', adminProtect, async (req, res) => {
     try {
         const website = await Website.findOneAndDelete({ slug: req.params.slug });
         if (!website) {
@@ -423,7 +445,7 @@ app.delete('/api/admin/websites/:slug', async (req, res) => {
 
 // @desc    Get all scam reports
 // @route   GET /api/admin/scam-reports
-app.get('/api/admin/scam-reports', async (req, res) => {
+app.get('/api/admin/scam-reports', adminProtect, async (req, res) => {
     try {
         const reports = await ScamReport.find().sort({ createdAt: -1 });
         res.json(reports);
@@ -434,7 +456,7 @@ app.get('/api/admin/scam-reports', async (req, res) => {
 
 // @desc    Update scam report status
 // @route   PUT /api/admin/scam-reports/:id/status
-app.put('/api/admin/scam-reports/:id/status', async (req, res) => {
+app.put('/api/admin/scam-reports/:id/status', adminProtect, async (req, res) => {
     try {
         const { status } = req.body;
         const report = await ScamReport.findById(req.params.id);
@@ -451,7 +473,7 @@ app.put('/api/admin/scam-reports/:id/status', async (req, res) => {
 
 // @desc    Get all reviews for moderation
 // @route   GET /api/admin/reviews
-app.get('/api/admin/reviews', async (req, res) => {
+app.get('/api/admin/reviews', adminProtect, async (req, res) => {
     try {
         const reviews = await Review.find().sort({ createdAt: -1 });
         res.json(reviews);
@@ -462,7 +484,7 @@ app.get('/api/admin/reviews', async (req, res) => {
 
 // @desc    Delete a review (moderation or user delete)
 // @route   DELETE /api/admin/reviews/:id
-app.delete('/api/admin/reviews/:id', async (req, res) => {
+app.delete('/api/admin/reviews/:id', adminProtect, async (req, res) => {
     try {
         const review = await Review.findByIdAndDelete(req.params.id);
         if (!review) {
@@ -655,7 +677,7 @@ app.get('/api/users/:walletAddress/subscription-payment', async (req, res) => {
 
 // @desc    Get all subscription payment requests (Admin)
 // @route   GET /api/admin/subscription-payments
-app.get('/api/admin/subscription-payments', async (req, res) => {
+app.get('/api/admin/subscription-payments', adminProtect, async (req, res) => {
     try {
         const { status } = req.query;
         const filter = status ? { status } : {};
@@ -668,7 +690,7 @@ app.get('/api/admin/subscription-payments', async (req, res) => {
 
 // @desc    Approve or reject a subscription payment (Admin)
 // @route   PUT /api/admin/subscription-payments/:id
-app.put('/api/admin/subscription-payments/:id', async (req, res) => {
+app.put('/api/admin/subscription-payments/:id', adminProtect, async (req, res) => {
     try {
         const { action, adminNote } = req.body; // action: 'approve' | 'reject'
         const payment = await SubscriptionPayment.findById(req.params.id);
@@ -849,7 +871,7 @@ app.delete('/api/users/:walletAddress/projects/:projectId', async (req, res) => 
 
 // @desc    Get all users (Admin)
 // @route   GET /api/admin/users
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', adminProtect, async (req, res) => {
     try {
         const users = await User.find().sort({ createdAt: -1 });
         res.json(users);
@@ -860,7 +882,7 @@ app.get('/api/admin/users', async (req, res) => {
 
 // @desc    Toggle block status of a user
 // @route   PUT /api/admin/users/:id/block
-app.put('/api/admin/users/:id/block', async (req, res) => {
+app.put('/api/admin/users/:id/block', adminProtect, async (req, res) => {
     try {
         const { isBlocked } = req.body;
         const user = await User.findById(req.params.id);
@@ -877,7 +899,7 @@ app.put('/api/admin/users/:id/block', async (req, res) => {
 
 // @desc    Toggle verify status of a user
 // @route   PUT /api/admin/users/:id/verify
-app.put('/api/admin/users/:id/verify', async (req, res) => {
+app.put('/api/admin/users/:id/verify', adminProtect, async (req, res) => {
     try {
         const { isVerified } = req.body;
         const user = await User.findById(req.params.id);
@@ -894,7 +916,7 @@ app.put('/api/admin/users/:id/verify', async (req, res) => {
 
 // @desc    Get all user projects (Admin)
 // @route   GET /api/admin/projects
-app.get('/api/admin/projects', async (req, res) => {
+app.get('/api/admin/projects', adminProtect, async (req, res) => {
     try {
         const projects = await Project.find().sort({ createdAt: -1 });
         res.json(projects);
@@ -905,7 +927,7 @@ app.get('/api/admin/projects', async (req, res) => {
 
 // @desc    Create project (Admin)
 // @route   POST /api/admin/projects
-app.post('/api/admin/projects', async (req, res) => {
+app.post('/api/admin/projects', adminProtect, async (req, res) => {
     try {
         const { walletAddress, name, description, url, githubUrl, category, status, tags, gradient } = req.body;
         if (!walletAddress || !name || !description) {
@@ -924,7 +946,7 @@ app.post('/api/admin/projects', async (req, res) => {
 
 // @desc    Update project (Admin)
 // @route   PUT /api/admin/projects/:id
-app.put('/api/admin/projects/:id', async (req, res) => {
+app.put('/api/admin/projects/:id', adminProtect, async (req, res) => {
     try {
         const { walletAddress, name, description, url, githubUrl, category, status, tags, gradient } = req.body;
         const project = await Project.findById(req.params.id);
@@ -949,7 +971,7 @@ app.put('/api/admin/projects/:id', async (req, res) => {
 
 // @desc    Delete project (Admin)
 // @route   DELETE /api/admin/projects/:id
-app.delete('/api/admin/projects/:id', async (req, res) => {
+app.delete('/api/admin/projects/:id', adminProtect, async (req, res) => {
     try {
         const project = await Project.findByIdAndDelete(req.params.id);
         if (!project) return res.status(404).json({ message: 'Project not found' });
@@ -989,6 +1011,32 @@ const protect = async (req, res, next) => {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
+
+// @desc    Admin login
+// @route   POST /api/admin/login
+app.post('/api/admin/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+        if (email.trim().toLowerCase() === 'admin@gmail.com' && password === 'admin@123') {
+            const token = jwt.sign(
+                { email: 'admin@gmail.com', isAdmin: true },
+                process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123',
+                { expiresIn: '7d' }
+            );
+            return res.json({
+                success: true,
+                token
+            });
+        } else {
+            return res.status(401).json({ message: 'Invalid admin credentials' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error during admin login', error: error.message });
+    }
+});
 
 // @desc    Register a new user
 // @route   POST /api/auth/register

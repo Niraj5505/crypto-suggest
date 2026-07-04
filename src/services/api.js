@@ -180,7 +180,9 @@ export const getRankings = async () => {
 
 export const getAdminWebsites = async () => {
     try {
-        const response = await fetch(`${API_URL}/admin/websites`);
+        const response = await fetch(`${API_URL}/admin/websites`, {
+            headers: getAdminHeaders()
+        });
         if (!response.ok) throw new Error('Failed to fetch admin websites');
         const websites = await response.json();
         return websites.map(mapWebsite);
@@ -193,7 +195,8 @@ export const getAdminWebsites = async () => {
 export const verifyWebsite = async (slug) => {
     try {
         const response = await fetch(`${API_URL}/admin/websites/${slug}/verify`, {
-            method: 'PUT'
+            method: 'PUT',
+            headers: getAdminHeaders()
         });
         if (!response.ok) throw new Error('Failed to verify website');
         return await response.json();
@@ -206,7 +209,8 @@ export const verifyWebsite = async (slug) => {
 export const deleteWebsite = async (slug) => {
     try {
         const response = await fetch(`${API_URL}/admin/websites/${slug}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAdminHeaders()
         });
         if (!response.ok) throw new Error('Failed to delete website');
         return await response.json();
@@ -218,7 +222,9 @@ export const deleteWebsite = async (slug) => {
 
 export const getAdminScamReports = async () => {
     try {
-        const response = await fetch(`${API_URL}/admin/scam-reports`);
+        const response = await fetch(`${API_URL}/admin/scam-reports`, {
+            headers: getAdminHeaders()
+        });
         if (!response.ok) throw new Error('Failed to fetch scam reports');
         return await response.json();
     } catch (error) {
@@ -231,9 +237,7 @@ export const updateScamReportStatus = async (id, status) => {
     try {
         const response = await fetch(`${API_URL}/admin/scam-reports/${id}/status`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAdminHeaders(),
             body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update scam status');
@@ -246,7 +250,9 @@ export const updateScamReportStatus = async (id, status) => {
 
 export const getAdminReviews = async () => {
     try {
-        const response = await fetch(`${API_URL}/admin/reviews`);
+        const response = await fetch(`${API_URL}/admin/reviews`, {
+            headers: getAdminHeaders()
+        });
         if (!response.ok) throw new Error('Failed to fetch reviews');
         return await response.json();
     } catch (error) {
@@ -258,7 +264,8 @@ export const getAdminReviews = async () => {
 export const deleteReview = async (id) => {
     try {
         const response = await fetch(`${API_URL}/admin/reviews/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAdminHeaders()
         });
         if (!response.ok) throw new Error('Failed to delete review');
         return await response.json();
@@ -272,9 +279,7 @@ export const updateUserBlockStatus = async (id, isBlocked) => {
     try {
         const response = await fetch(`${API_URL}/admin/users/${id}/block`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAdminHeaders(),
             body: JSON.stringify({ isBlocked }),
         });
         if (!response.ok) throw new Error('Failed to update user block status');
@@ -289,9 +294,7 @@ export const updateUserVerifyStatus = async (id, isVerified) => {
     try {
         const response = await fetch(`${API_URL}/admin/users/${id}/verify`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAdminHeaders(),
             body: JSON.stringify({ isVerified }),
         });
         if (!response.ok) throw new Error('Failed to update user verify status');
@@ -308,6 +311,14 @@ export const updateUserVerifyStatus = async (id, isVerified) => {
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+};
+
+const getAdminHeaders = () => {
+    const token = localStorage.getItem('adminToken');
     return {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -355,6 +366,17 @@ export const loginUser = async (email, password) => {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Login failed');
+    return data;
+};
+
+export const loginAdmin = async (email, password) => {
+    const response = await fetch(`${API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Admin login failed');
     return data;
 };
 
@@ -541,7 +563,9 @@ export const deleteDbUserProject = async (walletAddress, projectId) => {
 
 export const getAdminUsers = async () => {
     try {
-        const response = await fetch(`${API_URL}/admin/users`);
+        const response = await fetch(`${API_URL}/admin/users`, {
+            headers: getAdminHeaders()
+        });
         if (!response.ok) throw new Error('Failed to fetch admin users');
         return await response.json();
     } catch (error) {
@@ -552,7 +576,9 @@ export const getAdminUsers = async () => {
 
 export const getAdminProjects = async () => {
     try {
-        const response = await fetch(`${API_URL}/admin/projects`);
+        const response = await fetch(`${API_URL}/admin/projects`, {
+            headers: getAdminHeaders()
+        });
         if (!response.ok) throw new Error('Failed to fetch admin projects');
         const projects = await response.json();
         return projects.map(p => ({ ...p, id: p._id || p.id }));
@@ -566,7 +592,7 @@ export const createAdminProject = async (projectData) => {
     try {
         const response = await fetch(`${API_URL}/admin/projects`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAdminHeaders(),
             body: JSON.stringify(projectData),
         });
         if (!response.ok) throw new Error('Failed to create admin project');
@@ -581,7 +607,7 @@ export const updateAdminProject = async (id, projectData) => {
     try {
         const response = await fetch(`${API_URL}/admin/projects/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAdminHeaders(),
             body: JSON.stringify(projectData),
         });
         if (!response.ok) throw new Error('Failed to update admin project');
@@ -596,6 +622,7 @@ export const deleteAdminProject = async (id) => {
     try {
         const response = await fetch(`${API_URL}/admin/projects/${id}`, {
             method: 'DELETE',
+            headers: getAdminHeaders()
         });
         if (!response.ok) throw new Error('Failed to delete admin project');
         return await response.json();
