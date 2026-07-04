@@ -175,10 +175,13 @@ const Admin = () => {
         return dbUsers
             .filter(u => u.subscribedPlan)
             .map(u => ({
+                userId: u._id || u.id,
                 wallet: u.walletAddress,
+                email: u.email,
                 planId: u.subscribedPlan,
                 subscribedAt: u.subscribedAt,
-                price: SUB_PLANS[u.subscribedPlan]?.price || 0
+                price: SUB_PLANS[u.subscribedPlan]?.price || 0,
+                user: u
             }));
     }, [dbUsers]);
 
@@ -190,6 +193,11 @@ const Admin = () => {
     /* project management state */
     const [showProjectModal, setShowProjectModal] = useState(false);
     const [editingProject, setEditingProject]   = useState(null); // null = add, obj = edit
+    
+    /* subscription management state */
+    const [showSubModal, setShowSubModal] = useState(false);
+    const [subEditingUser, setSubEditingUser] = useState(null);
+    const [subForm, setSubForm] = useState({ planId: '', subscribedAt: '' });
     const [projectForm, setProjectForm]         = useState(BLANK_PROJECT);
     const [projectErrors, setProjectErrors]     = useState({});
     const [deleteConfirm, setDeleteConfirm]     = useState(null); // id to confirm
@@ -340,6 +348,59 @@ const Admin = () => {
             }
         } catch (err) {
             showToast(err.message || 'Failed to login as user', 'error');
+        }
+    };
+
+    const openEditSubscription = (user) => {
+        setSubEditingUser(user);
+        
+        let dateStr = '';
+        if (user.subscribedAt) {
+            const d = new Date(user.subscribedAt);
+            // format to YYYY-MM-DD
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+        } else {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+        }
+
+        setSubForm({
+            planId: user.subscribedPlan || '',
+            subscribedAt: dateStr
+        });
+        setShowSubModal(true);
+    };
+
+    const handleSubSave = async () => {
+        if (!subEditingUser) return;
+        try {
+            const response = await fetch(`${API_URL}/admin/users/${subEditingUser._id || subEditingUser.id}/subscription`, {
+                method: 'PUT',
+                headers: {
+                    ...getAdminHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subscribedPlan: subForm.planId || null,
+                    subscribedAt: subForm.subscribedAt ? new Date(subForm.subscribedAt).getTime() : null
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to update subscription');
+            }
+            showToast('Subscription updated successfully!');
+            setShowSubModal(false);
+            fetchServerData();
+        } catch (err) {
+            showToast(err.message || 'Failed to update subscription', 'error');
         }
     };
 
@@ -816,6 +877,11 @@ const Admin = () => {
                                                                             className="w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1">
                                                                             <Zap className="w-3 h-3" /> Login As
                                                                         </button>
+                                                                        <button onClick={() => openEditSubscription(u)}
+                                                                            className="w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center justify-center gap-1"
+                                                                            title="Edit Subscription">
+                                                                            <PenLine className="w-3 h-3" /> Plan
+                                                                        </button>
                                                                         <button onClick={() => handleToggleVerify(u._id, !u.isVerified)}
                                                                             className={`w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold transition-colors ${u.isVerified ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
                                                                             {u.isVerified ? 'Remove Verification' : 'Verify Account'}
@@ -1092,6 +1158,7 @@ const Admin = () => {
                                                 <th className="py-4 px-6 text-left">Subscribed</th>
                                                 <th className="py-4 px-6 text-left">Next Billing</th>
                                                 <th className="py-4 px-6 text-center">Status</th>
+                                                <th className="py-4 px-6 text-right">Actions</th>
                                             </tr></thead>
                                             <tbody className="divide-y divide-slate-50">
                                                 {dbSubs
@@ -1119,6 +1186,12 @@ const Admin = () => {
                                                                 <td className="py-4 px-6 text-xs text-slate-500">{formatDate(nextDate.getTime())}</td>
                                                                 <td className="py-4 px-6 text-center">
                                                                     <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">✓ Active</span>
+                                                                </td>
+                                                                <td className="py-4 px-6 text-right">
+                                                                    <button onClick={() => openEditSubscription(sub.user)}
+                                                                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Edit subscription">
+                                                                        <PenLine className="w-4 h-4 text-amber-500 hover:text-amber-700" />
+                                                                    </button>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -1371,6 +1444,55 @@ const Admin = () => {
                                     </table>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* ── Edit Subscription Modal ── */}
+                    {showSubModal && subEditingUser && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full overflow-hidden transition-all animate-scale-up text-slate-800">
+                                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                    <div>
+                                        <h3 className="font-black text-slate-800 text-base">Edit Subscription</h3>
+                                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">User: {subEditingUser.username || subEditingUser.email || truncateAddr(subEditingUser.walletAddress)}</p>
+                                    </div>
+                                    <button onClick={() => setShowSubModal(false)} className="w-8 h-8 rounded-full bg-slate-200/60 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Active Subscription Plan</label>
+                                        <select 
+                                            value={subForm.planId} 
+                                            onChange={e => setSubForm(f => ({ ...f, planId: e.target.value }))}
+                                            className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 bg-white font-medium text-slate-700"
+                                        >
+                                            <option value="">None / Free Plan</option>
+                                            <option value="starter">Starter Plan ($99)</option>
+                                            <option value="pro">Pro Plan ($199)</option>
+                                            <option value="premium">Premium Plan ($299)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subscription Start Date</label>
+                                        <input 
+                                            type="date"
+                                            value={subForm.subscribedAt}
+                                            onChange={e => setSubForm(f => ({ ...f, subscribedAt: e.target.value }))}
+                                            className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 bg-white font-medium text-slate-700"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                                    <button onClick={() => setShowSubModal(false)} className="h-10 px-4 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button onClick={handleSubSave} className="h-10 px-5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition-colors">
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
 

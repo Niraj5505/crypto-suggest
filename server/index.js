@@ -1095,6 +1095,27 @@ app.put('/api/admin/users/:id/verify', adminProtect, async (req, res) => {
     }
 });
 
+// @desc    Update user subscription details (Admin)
+// @route   PUT /api/admin/users/:id/subscription
+app.put('/api/admin/users/:id/subscription', adminProtect, async (req, res) => {
+    try {
+        const { subscribedPlan, subscribedAt } = req.body;
+        const user = await User.findById(req.params.id);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.subscribedPlan = subscribedPlan || null;
+        user.subscribedAt = subscribedAt ? Number(subscribedAt) : null;
+
+        await user.save();
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error updating user subscription', error: error.message });
+    }
+});
+
 // @desc    Impersonate user (Admin)
 // @route   POST /api/admin/users/:id/impersonate
 app.post('/api/admin/users/:id/impersonate', adminProtect, async (req, res) => {
