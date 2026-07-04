@@ -77,13 +77,13 @@ const Home = () => {
 
                                 {/* Main Headline */}
                                 <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 leading-[1.1] tracking-tight animate-fade-in-up delay-100">
-                                    Build on
+                                    Where
                                     <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
                                         Verified Crypto
                                     </span>
                                     <br />
-                                    Protocols
+                                    Investors Meet Projects
                                 </h1>
 
                                 {/* Subheadline */}
