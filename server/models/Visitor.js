@@ -16,5 +16,5 @@ const visitorSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-const Visitor = mongoose.model('Visitor', visitorSchema);
+const Visitor = mongoose.models.Visitor || mongoose.model('Visitor', visitorSchema);
 export default Visitor;

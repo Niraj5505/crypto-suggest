@@ -240,20 +240,36 @@ const Admin = () => {
         if (!isAdminLoggedIn) return;
         setLoading(true);
         try {
-            const [w, s, r, u, p, sp] = await Promise.all([
-                getAdminWebsites(),
-                getAdminScamReports(),
-                getAdminReviews(),
-                getAdminUsers(),
-                getAdminProjects(),
-                getAdminSubPayments()
-            ]);
-            setWebsites(w || []);
-            setScamReports(s || []);
-            setReviews(r || []);
-            setDbUsers(u || []);
-            setDbProjects(p || []);
-            setSubPayments(sp || []);
+            // Fetch everything safely without crashing if one endpoint fails
+            try {
+                const w = await getAdminWebsites();
+                setWebsites(w || []);
+            } catch (e) { console.error("Error loading websites:", e); }
+
+            try {
+                const s = await getAdminScamReports();
+                setScamReports(s || []);
+            } catch (e) { console.error("Error loading scam reports:", e); }
+
+            try {
+                const r = await getAdminReviews();
+                setReviews(r || []);
+            } catch (e) { console.error("Error loading reviews:", e); }
+
+            try {
+                const u = await getAdminUsers();
+                setDbUsers(u || []);
+            } catch (e) { console.error("Error loading users:", e); }
+
+            try {
+                const p = await getAdminProjects();
+                setDbProjects(p || []);
+            } catch (e) { console.error("Error loading projects:", e); }
+
+            try {
+                const sp = await getAdminSubPayments();
+                setSubPayments(sp || []);
+            } catch (e) { console.error("Error loading sub payments:", e); }
 
             // Fetch visitor analytics stats
             try {
