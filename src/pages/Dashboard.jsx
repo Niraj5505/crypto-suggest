@@ -394,6 +394,18 @@ const Dashboard = () => {
                 setProjects(projs);
                 const revs = await getUserReviews(walletAddress);
                 setMyReviews(revs);
+
+                // Fetch user's leads on mount so they can be shown on project cards
+                try {
+                    const API_URL = import.meta.env.VITE_API_URL || '/api';
+                    const resLeads = await fetch(`${API_URL}/users/${walletAddress}/leads`);
+                    if (resLeads.ok) {
+                        const dataLeads = await resLeads.json();
+                        setLeads(dataLeads || []);
+                    }
+                } catch (e) {
+                    console.error('Error fetching leads on mount:', e);
+                }
                 
                 setReferralsLoading(true);
                 const refs = await getDbUserReferrals(walletAddress);
@@ -864,10 +876,14 @@ const Dashboard = () => {
                                                                     <GitBranch className="w-3 h-3" /> GitHub
                                                                 </a>
                                                             )}
-                                                            <span className="ml-auto text-[10px] text-gray-400 flex items-center gap-2">
+                                                            <span className="ml-auto text-[10px] text-gray-400 flex items-center gap-3">
                                                                 <span className="flex items-center gap-1 text-blue-500 font-semibold" title="Total page views">
                                                                     <Eye className="w-3.5 h-3.5" />
                                                                     {getDeterministicViews(proj.name)}
+                                                                </span>
+                                                                <span className="flex items-center gap-1 text-emerald-600 font-semibold" title="Leads captured">
+                                                                    <UserCheck className="w-3.5 h-3.5" />
+                                                                    {leads.filter(l => l.websiteSlug === (proj.slug || proj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')) || l.websiteName?.toLowerCase() === proj.name?.toLowerCase()).length}
                                                                 </span>
                                                                 <span className="flex items-center gap-1">
                                                                     <Calendar className="w-3 h-3" /> {dateStr}
