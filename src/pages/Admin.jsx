@@ -780,7 +780,7 @@ const Admin = () => {
                                                                 <td className="py-4 px-6 text-right">
                                                                     <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
                                                                         <button onClick={() => handleImpersonateUser(u)}
-                                                                            className="w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold bg-indigo-650 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1">
+                                                                            className="w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1">
                                                                             <Zap className="w-3 h-3" /> Login As
                                                                         </button>
                                                                         <button onClick={() => handleToggleVerify(u._id, !u.isVerified)}
