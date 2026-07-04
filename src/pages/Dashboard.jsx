@@ -227,6 +227,23 @@ const PLANS = [
             { text: 'Priority Support',          included: true },
         ],
     },
+    {
+        id: 'enterprise',
+        name: 'Enterprise',
+        price: 0,
+        period: 'lifetime',
+        gradient: 'from-slate-800 to-slate-950',
+        glow: 'shadow-slate-500',
+        icon: Crown,
+        badge: 'Admin Assigned',
+        tagline: 'Unlimited Active Projects & Verification',
+        features: [
+            { text: 'Unlimited Active Projects', included: true },
+            { text: 'Homepage Hero & Featured Placement', included: true },
+            { text: 'Lifetime Verification & Auto-Approve', included: true },
+            { text: 'Dedicated Account Support', included: true }
+        ],
+    },
 ];
 
 const FAQ = [
@@ -357,8 +374,10 @@ const Dashboard = () => {
     useEffect(() => {
         const loadDbData = async () => {
             if (!walletAddress) return;
+            const storedRef = localStorage.getItem('cs_referred_by');
+            
+            // 1. Get user profile and active plan
             try {
-                const storedRef = localStorage.getItem('cs_referred_by');
                 const user = await getDbUser(walletAddress, storedRef);
                 if (storedRef && user) {
                     localStorage.removeItem('cs_referred_by');
@@ -389,30 +408,47 @@ const Dashboard = () => {
                         setActivePlan(null);
                     }
                 }
-                
+            } catch (err) {
+                console.error('Error fetching user profile from database:', err);
+            }
+
+            // 2. Fetch projects
+            try {
                 const projs = await getDbUserProjects(walletAddress);
                 setProjects(projs);
+            } catch (err) {
+                console.error('Error fetching user projects:', err);
+            }
+
+            // 3. Fetch reviews
+            try {
                 const revs = await getUserReviews(walletAddress);
                 setMyReviews(revs);
+            } catch (err) {
+                console.error('Error fetching user reviews:', err);
+            }
 
-                // Fetch user's leads on mount so they can be shown on project cards
-                try {
-                    const API_URL = import.meta.env.VITE_API_URL || '/api';
-                    const resLeads = await fetch(`${API_URL}/users/${walletAddress}/leads`);
-                    if (resLeads.ok) {
-                        const dataLeads = await resLeads.json();
-                        setLeads(dataLeads || []);
-                    }
-                } catch (e) {
-                    console.error('Error fetching leads on mount:', e);
+            // 4. Fetch leads
+            try {
+                const API_URL = import.meta.env.VITE_API_URL || '/api';
+                const resLeads = await fetch(`${API_URL}/users/${walletAddress}/leads`);
+                if (resLeads.ok) {
+                    const dataLeads = await resLeads.json();
+                    setLeads(dataLeads || []);
                 }
-                
+            } catch (e) {
+                console.error('Error fetching leads on mount:', e);
+            }
+
+            // 5. Fetch referrals
+            try {
                 setReferralsLoading(true);
                 const refs = await getDbUserReferrals(walletAddress);
                 setReferrals(refs);
-                setReferralsLoading(false);
             } catch (err) {
-                console.error('Error loading data from database:', err);
+                console.error('Error fetching user referrals:', err);
+            } finally {
+                setReferralsLoading(false);
             }
         };
         
