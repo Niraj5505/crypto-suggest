@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     ShieldCheck, ShieldAlert, MessageSquare, Check, X, AlertTriangle,
     ExternalLink, Trash2, Wallet, LayoutGrid, Users, Folder,
-    CreditCard, BarChart2, RefreshCw, Eye, Star, Flag,
+    CreditCard, BarChart2, RefreshCw, Eye, Star, Flag, Activity,
     Search, ChevronDown, TrendingUp, Crown, Zap, Gem,
     CheckCircle2, Clock, Globe, Hash, Calendar, Filter,
     Plus, PenLine, Lock, Mail, EyeOff, LogOut
@@ -166,6 +166,8 @@ const Admin = () => {
     const [subPayments, setSubPayments] = useState([]);
     const [loading,     setLoading]     = useState(false);
     const [visiblePasswords, setVisiblePasswords] = useState({});
+    const [uniqueVisitors, setUniqueVisitors] = useState(0);
+    const [totalHits, setTotalHits] = useState(0);
 
     /* derived database subscriptions */
     const dbSubs = useMemo(() => {
@@ -243,6 +245,20 @@ const Admin = () => {
             setDbUsers(u || []);
             setDbProjects(p || []);
             setSubPayments(sp || []);
+
+            // Fetch visitor analytics stats
+            try {
+                const resStats = await fetch(`${API_URL}/admin/visitors-stats`, {
+                    headers: getAdminHeaders()
+                });
+                if (resStats.ok) {
+                    const stats = await resStats.json();
+                    setUniqueVisitors(stats.uniqueCount || 0);
+                    setTotalHits(stats.totalCount || 0);
+                }
+            } catch (err) {
+                console.error("Failed to load visitor stats:", err);
+            }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
@@ -599,7 +615,7 @@ const Admin = () => {
                     {/* ══════════ OVERVIEW ══════════ */}
                     {activeTab === 'overview' && (
                         <div className="space-y-6">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                                 <StatCard icon={Users}        label="Total Users"     value={dbUsers.length}    color="text-blue-600"   bg="bg-white" />
                                 <StatCard icon={Folder}       label="User Projects"   value={dbProjects.length} color="text-indigo-600" bg="bg-white" />
                                 <StatCard icon={MessageSquare} label="Reviews"        value={reviews.length}    color="text-purple-600" bg="bg-white" />
@@ -608,6 +624,8 @@ const Admin = () => {
                                 <StatCard icon={ShieldCheck}  label="Pending Sites"  value={pendingWebsites}   color="text-yellow-600" bg="bg-white" sub="Awaiting approval" />
                                 <StatCard icon={Flag}         label="Pending Scams"  value={pendingScams}      color="text-orange-600" bg="bg-white" sub="Need investigation" />
                                 <StatCard icon={Globe}        label="Total Sites"    value={websites.length}   color="text-teal-600"   bg="bg-white" />
+                                <StatCard icon={Eye}          label="Unique Visitors" value={uniqueVisitors}    color="text-indigo-700" bg="bg-white" />
+                                <StatCard icon={Activity}     label="Total Page Views" value={totalHits}         color="text-pink-600"   bg="bg-white" />
                             </div>
 
                             {/* Quick activity */}

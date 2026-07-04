@@ -13,6 +13,8 @@ import User from './models/User.js';
 import Project from './models/Project.js';
 import SubscriptionPayment from './models/SubscriptionPayment.js';
 import Lead from './models/Lead.js';
+import Visitor from './models/Visitor.js';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 // Load env variables FIRST — must be before any route or service call
@@ -991,6 +993,47 @@ app.get('/api/users/:walletAddress/leads', async (req, res) => {
         res.json(leads);
     } catch (error) {
         res.status(500).json({ message: 'Server Error fetching leads', error: error.message });
+    }
+});
+
+// @desc    Register a new page hit / visitor view
+// @route   POST /api/analytics/hit
+app.post('/api/analytics/hit', async (req, res) => {
+    try {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const ipHash = crypto.createHash('sha256').update(ip).digest('hex');
+        const userAgent = req.headers['user-agent'] || '';
+
+        // Capture new hit
+        const visitor = new Visitor({
+            ipHash,
+            userAgent
+        });
+        await visitor.save();
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error tracking analytics', error: error.message });
+    }
+});
+
+// @desc    Get visitor statistics (Admin)
+// @route   GET /api/admin/visitors-stats
+app.get('/api/admin/visitors-stats', adminProtect, async (req, res) => {
+    try {
+        const totalCount = await Visitor.countDocuments();
+        
+        // Count distinct ipHash values to find unique visitors
+        const uniqueIps = await Visitor.distinct('ipHash');
+        const uniqueCount = uniqueIps.length;
+
+        res.json({
+            success: true,
+            totalCount,
+            uniqueCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error getting analytics', error: error.message });
     }
 });
 
