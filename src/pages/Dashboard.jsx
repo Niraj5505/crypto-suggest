@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Sparkles, AlertTriangle, Flag, Send,
     RefreshCw, Clock, Hash, Search, Plus, Info,
     Folder, Code2, Rocket, Tag, Trash2, PenLine, GitBranch,
-    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown
+    CreditCard, Crown, Gem, BadgeCheck, Sparkle, ChevronDown, UserCheck
 } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
 import { useWallet } from '../contexts/WalletContext';
@@ -254,6 +254,7 @@ const TABS = [
     { id: 'subscription',  label: 'Subscription',  icon: CreditCard },
     { id: 'referrals',     label: 'Referrals',     icon: Users },
     { id: 'reports',       label: 'Scam Reports',  icon: AlertTriangle },
+    { id: 'leads',         label: 'My Leads',      icon: UserCheck },
 ];
 
 /* ─────────────────── MAIN COMPONENT ─────────────────── */
@@ -314,6 +315,10 @@ const Dashboard = () => {
     const [myReviews, setMyReviews]           = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [reviewsError, setReviewsError]     = useState(null);
+
+    /* leads state */
+    const [leads, setLeads]                   = useState([]);
+    const [leadsLoading, setLeadsLoading]     = useState(false);
 
     const { bookmarks } = useBookmark();
     const [copied, setCopied] = useState(false);
@@ -545,6 +550,29 @@ const Dashboard = () => {
     useEffect(() => {
         if (activeTab === 'reviews' && walletAddress) {
             fetchMyReviews();
+        }
+    }, [activeTab, walletAddress]);
+
+    const fetchMyLeads = async () => {
+        if (!walletAddress) return;
+        setLeadsLoading(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const res = await fetch(`${API_URL}/users/${walletAddress}/leads`);
+            if (res.ok) {
+                const data = await res.json();
+                setLeads(data);
+            }
+        } catch (e) {
+            console.error('Failed to load leads:', e);
+        } finally {
+            setLeadsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'leads' && walletAddress) {
+            fetchMyLeads();
         }
     }, [activeTab, walletAddress]);
 
@@ -2056,6 +2084,110 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
+                        </div>
+                    )}
+
+                    {/* ══════════════════ LEADS TAB ══════════════════ */}
+                    {activeTab === 'leads' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                                        <UserCheck className="w-5 h-5 text-indigo-500" /> Buyer Leads Dashboard
+                                    </h2>
+                                    <p className="text-sm text-gray-500 mt-0.5">Track potential users and buyers who clicked on your projects</p>
+                                </div>
+                                <button 
+                                    onClick={fetchMyLeads}
+                                    className="p-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all"
+                                    title="Refresh leads"
+                                >
+                                    <RefreshCw className={`w-4 h-4 text-gray-600 ${leadsLoading ? 'animate-spin' : ''}`} />
+                                </button>
+                            </div>
+
+                            {/* Leads count summary cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="bg-gradient-to-br from-indigo-500 to-indigo-650 rounded-2xl p-5 text-white shadow-md relative overflow-hidden">
+                                    <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
+                                    <p className="text-white/70 text-xs font-bold uppercase tracking-wider">Total Leads</p>
+                                    <p className="text-3xl font-black mt-1">{leads.length}</p>
+                                    <p className="text-[10px] text-white/60 mt-2 font-medium">Captured from clicks</p>
+                                </div>
+                                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                    <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Unique Visitors</p>
+                                    <p className="text-3xl font-black text-gray-800 mt-1">
+                                        {new Set(leads.map(l => l.leadWalletAddress)).size}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 mt-2 font-medium">Distinct wallet addresses</p>
+                                </div>
+                                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                    <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Conversion Interest</p>
+                                    <p className="text-3xl font-black text-emerald-600 mt-1">
+                                        {leads.length > 0 ? 'High 🔥' : '—'}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 mt-2 font-medium">Based on active click rates</p>
+                                </div>
+                            </div>
+
+                            {/* Leads List Table */}
+                            <div className="bg-white rounded-3xl border border-gray-150 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                                    <h3 className="font-bold text-gray-800 text-sm">All Captured Lead Information</h3>
+                                    <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-bold">
+                                        {leads.length} Active Leads
+                                    </span>
+                                </div>
+
+                                {leadsLoading ? (
+                                    <div className="p-12 text-center space-y-3">
+                                        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                                        <p className="text-xs text-gray-500 font-semibold">Loading your leads...</p>
+                                    </div>
+                                ) : leads.length === 0 ? (
+                                    <div className="text-center py-16 px-6">
+                                        <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                                            <UserCheck className="w-8 h-8 text-gray-300" />
+                                        </div>
+                                        <h4 className="font-bold text-gray-800 mb-1">No Leads Yet</h4>
+                                        <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
+                                            Leads are generated automatically when other logged-in users click on your listed projects. Promote your projects to start collecting interest!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                    <th className="py-4 px-6 text-left">Project Name</th>
+                                                    <th className="py-4 px-6 text-left">User Details</th>
+                                                    <th className="py-4 px-6 text-left">Wallet Address</th>
+                                                    <th className="py-4 px-6 text-right">Clicked Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {leads.map((lead) => (
+                                                    <tr key={lead._id || lead.id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="py-4 px-6 font-bold text-gray-800">
+                                                            {lead.websiteName}
+                                                        </td>
+                                                        <td className="py-4 px-6">
+                                                            <div className="font-semibold text-gray-700">@{lead.leadUsername || 'anonymous'}</div>
+                                                            <div className="text-xs text-gray-400 font-medium">{lead.leadEmail || '—'}</div>
+                                                        </td>
+                                                        <td className="py-4 px-6 font-mono text-xs text-indigo-600 font-bold select-all cursor-pointer" title="Click to copy" onClick={() => { navigator.clipboard.writeText(lead.leadWalletAddress); alert('Wallet address copied!'); }}>
+                                                            {lead.leadWalletAddress.slice(0, 8)}...{lead.leadWalletAddress.slice(-6)}
+                                                        </td>
+                                                        <td className="py-4 px-6 text-right text-xs text-gray-500 font-semibold">
+                                                            {new Date(lead.clickedAt || lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 

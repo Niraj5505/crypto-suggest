@@ -71,6 +71,27 @@ const WebsiteDetail = () => {
         fetchWebsiteData();
     }, [slug]);
 
+    useEffect(() => {
+        if (website && isConnected && walletAddress) {
+            const captureLead = async () => {
+                try {
+                    const API_URL = import.meta.env.VITE_API_URL || '/api';
+                    await fetch(`${API_URL}/leads`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            leadWalletAddress: walletAddress,
+                            websiteSlug: website.slug
+                        })
+                    });
+                } catch (err) {
+                    console.error('Error capturing lead:', err);
+                }
+            };
+            captureLead();
+        }
+    }, [website, isConnected, walletAddress]);
+
     const handleScamSubmit = async (e) => {
         e.preventDefault();
         setScamError('');

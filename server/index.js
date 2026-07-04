@@ -12,6 +12,7 @@ import ScamReport from './models/ScamReport.js';
 import User from './models/User.js';
 import Project from './models/Project.js';
 import SubscriptionPayment from './models/SubscriptionPayment.js';
+import Lead from './models/Lead.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 // Load env variables FIRST — must be before any route or service call
@@ -914,6 +915,82 @@ app.delete('/api/users/:walletAddress/projects/:projectId', async (req, res) => 
         res.json({ success: true, message: 'Project deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error deleting project', error: error.message });
+    }
+});
+
+// @desc    Capture a new lead when a user clicks on a project
+// @route   POST /api/leads
+app.post('/api/leads', async (req, res) => {
+    try {
+        const { leadWalletAddress, websiteSlug } = req.body;
+
+        if (!leadWalletAddress || !websiteSlug) {
+            return res.status(400).json({ message: 'leadWalletAddress and websiteSlug are required.' });
+        }
+
+        const visitorWallet = leadWalletAddress.toLowerCase();
+        const website = await Website.findOne({ slug: websiteSlug });
+        if (!website) {
+            return res.status(404).json({ message: 'Website not found.' });
+        }
+
+        // Try to match the website to a user project to get the owner
+        const project = await Project.findOne({
+            $or: [
+                { name: website.name },
+                { url: website.url },
+                { name: { $regex: new RegExp(`^${website.name}$`, 'i') } }
+            ]
+        });
+
+        // Fallback to default/admin wallet if no user project matches
+        const projectOwnerWallet = project ? project.walletAddress.toLowerCase() : '0x0000000000000000000000000000000000000000';
+
+        // Ignore self-clicks
+        if (visitorWallet === projectOwnerWallet) {
+            return res.json({ success: true, message: 'Self-click ignored.' });
+        }
+
+        // Check if this lead was already captured in the last 24 hours to prevent spam
+        const timeLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const duplicateLead = await Lead.findOne({
+            websiteSlug,
+            leadWalletAddress: visitorWallet,
+            createdAt: { $gte: timeLimit }
+        });
+
+        if (duplicateLead) {
+            return res.json({ success: true, message: 'Lead already captured recently.' });
+        }
+
+        // Fetch lead user details
+        const leadUser = await User.findOne({ walletAddress: visitorWallet });
+
+        const lead = new Lead({
+            websiteSlug,
+            websiteName: website.name,
+            projectOwnerWallet,
+            leadWalletAddress: visitorWallet,
+            leadUsername: leadUser ? leadUser.username : '',
+            leadEmail: leadUser ? leadUser.email : 'contact@user.com'
+        });
+
+        await lead.save();
+        res.status(201).json({ success: true, lead });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error capturing lead', error: error.message });
+    }
+});
+
+// @desc    Get leads for projects owned by a user
+// @route   GET /api/users/:walletAddress/leads
+app.get('/api/users/:walletAddress/leads', async (req, res) => {
+    try {
+        const walletAddress = req.params.walletAddress.toLowerCase();
+        const leads = await Lead.find({ projectOwnerWallet: walletAddress }).sort({ createdAt: -1 });
+        res.json(leads);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching leads', error: error.message });
     }
 });
 
