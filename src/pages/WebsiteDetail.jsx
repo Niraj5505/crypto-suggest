@@ -13,6 +13,7 @@ import WebsiteCard from '../components/website/WebsiteCard'; // Import for Simil
 import { getWebsiteBySlug, getWebsites, submitScamReport } from '../services/api';
 import { useBookmark } from '../contexts/BookmarkContext';
 import { useWallet } from '../contexts/WalletContext';
+import WalletConnectionModal from '../components/wallet/WalletConnectionModal';
 
 const WebsiteDetail = () => {
     const { slug } = useParams();
@@ -24,6 +25,7 @@ const WebsiteDetail = () => {
     const [showScamModal, setShowScamModal] = useState(false);
     const { isBookmarked, toggleBookmark } = useBookmark();
     const { isConnected, walletAddress } = useWallet();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     // Scam form state
     const [scamFormData, setScamFormData] = useState({
@@ -120,6 +122,54 @@ const WebsiteDetail = () => {
                     <h1 className="text-4xl font-bold mb-4">Website Not Found</h1>
                     <Link to="/browse"><Button>Browse All Websites</Button></Link>
                 </div>
+            </PageLayout>
+        );
+    }
+
+    if (!isConnected) {
+        return (
+            <PageLayout>
+                <div className="container-custom pt-40 pb-20 flex items-center justify-center min-h-[70vh]">
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white/80 backdrop-blur-md rounded-3xl p-8 md:p-12 text-center shadow-2xl border border-gray-100 max-w-lg w-full relative overflow-hidden"
+                    >
+                        {/* Ambient glow blobs */}
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-2xl" />
+                        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl" />
+                        
+                        <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 relative z-10 border border-indigo-100/50">
+                            <Shield className="w-10 h-10 text-indigo-600 animate-pulse" />
+                        </div>
+                        
+                        <h2 className="text-3xl font-extrabold text-gray-900 mb-3 relative z-10">
+                            Access Restricted 🔒
+                        </h2>
+                        
+                        <p className="text-gray-600 mb-8 leading-relaxed relative z-10 text-sm">
+                            To view detailed analysis, security audits, trust scores, and community reviews for <strong>{website?.name || 'this project'}</strong>, please sign in or connect your wallet.
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center relative z-10">
+                            <Button 
+                                onClick={() => setIsAuthModalOpen(true)}
+                                className="px-8 py-3 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary-dark hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm flex items-center justify-center gap-2"
+                            >
+                                Sign In / Connect Wallet
+                            </Button>
+                            <Link to="/browse">
+                                <Button variant="outline" className="w-full sm:w-auto px-8 py-3 rounded-2xl text-sm font-semibold border-gray-200 text-gray-700 hover:bg-gray-50">
+                                    Browse Projects
+                                </Button>
+                            </Link>
+                        </div>
+                    </motion.div>
+                </div>
+                <WalletConnectionModal 
+                    isOpen={isAuthModalOpen} 
+                    onClose={() => setIsAuthModalOpen(false)} 
+                />
             </PageLayout>
         );
     }
