@@ -168,6 +168,7 @@ const Admin = () => {
     const [visiblePasswords, setVisiblePasswords] = useState({});
     const [uniqueVisitors, setUniqueVisitors] = useState(0);
     const [totalHits, setTotalHits] = useState(0);
+    const [visitors, setVisitors] = useState([]);
 
     /* derived database subscriptions */
     const dbSubs = useMemo(() => {
@@ -258,6 +259,19 @@ const Admin = () => {
                 }
             } catch (err) {
                 console.error("Failed to load visitor stats:", err);
+            }
+
+            // Fetch visitor logs
+            try {
+                const resVisitors = await fetch(`${API_URL}/admin/visitors`, {
+                    headers: getAdminHeaders()
+                });
+                if (resVisitors.ok) {
+                    const data = await resVisitors.json();
+                    setVisitors(data || []);
+                }
+            } catch (err) {
+                console.error("Failed to load visitor logs:", err);
             }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
@@ -425,6 +439,7 @@ const Admin = () => {
         { id: 'subscriptions', label: 'Subscriptions',     icon: CreditCard,   badge: dbSubs.length || null },
         { id: 'payments',      label: 'Payment Requests',  icon: CheckCircle2, badge: pendingPaymentCount || null },
         { id: 'approvals',     label: 'Site Approvals',    icon: ShieldCheck,  badge: pendingWebsites || null },
+        { id: 'visitors',      label: 'Site Visitors',     icon: Eye,          badge: uniqueVisitors || null },
     ];
 
     /* ── not connected ── */
@@ -1310,6 +1325,45 @@ const Admin = () => {
                                                                 <X className="w-3.5 h-3.5" /> {site.verified ? 'Delete' : 'Reject'}
                                                             </button>
                                                         </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ══════════ VISITORS ══════════ */}
+                    {activeTab === 'visitors' && (
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-fade-in">
+                            <SectionHead title="Site Visitors Activity" count={totalHits} onRefresh={fetchServerData} loading={loading}>
+                                <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-bold">
+                                    {uniqueVisitors} Unique Visitors
+                                </span>
+                            </SectionHead>
+                            {visitors.length === 0 ? <Empty icon={Eye} text="No visitor logs recorded yet" /> : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead><tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            <th className="py-4 px-6 text-left">#</th>
+                                            <th className="py-4 px-6 text-left">Visitor Hash ID (IP Hash)</th>
+                                            <th className="py-4 px-6 text-left">Browser / User Agent</th>
+                                            <th className="py-4 px-6 text-right">Visited Date & Time</th>
+                                        </tr></thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {visitors.map((v, i) => (
+                                                <tr key={v._id || v.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="py-4 px-6 text-slate-400 font-bold text-xs">{i + 1}</td>
+                                                    <td className="py-4 px-6 font-mono text-xs text-indigo-650 font-bold">
+                                                        {v.ipHash}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-xs text-slate-500 max-w-sm truncate" title={v.userAgent}>
+                                                        {v.userAgent || 'Unknown Device'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-right text-xs text-slate-400 font-semibold">
+                                                        {new Date(v.visitedAt || v.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                     </td>
                                                 </tr>
                                             ))}

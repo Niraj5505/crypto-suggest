@@ -1037,6 +1037,17 @@ app.get('/api/admin/visitors-stats', adminProtect, async (req, res) => {
     }
 });
 
+// @desc    Get all visitors logs (Admin)
+// @route   GET /api/admin/visitors
+app.get('/api/admin/visitors', adminProtect, async (req, res) => {
+    try {
+        const visitors = await Visitor.find().sort({ createdAt: -1 }).limit(100);
+        res.json(visitors);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching visitors list', error: error.message });
+    }
+});
+
 // Admin Panel extra routes
 
 // @desc    Get all users (Admin)
