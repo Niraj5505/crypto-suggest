@@ -98,7 +98,7 @@ const WebsiteDetail = () => {
         setScamSubmitting(true);
 
         if (!isConnected) {
-            setScamError('Please connect your wallet to submit a scam report.');
+            setScamError('Please sign in to submit a scam report.');
             setScamSubmitting(false);
             return;
         }
@@ -169,7 +169,7 @@ const WebsiteDetail = () => {
                         </h2>
                         
                         <p className="text-gray-600 mb-8 leading-relaxed relative z-10 text-sm">
-                            To view detailed analysis, security audits, trust scores, and community reviews for <strong>{website?.name || 'this project'}</strong>, please sign in or connect your wallet.
+                            To view detailed analysis, security audits, trust scores, and community reviews for <strong>{website?.name || 'this project'}</strong>, please sign in.
                         </p>
                         
                         <div className="flex flex-col sm:flex-row gap-3 justify-center relative z-10">
@@ -177,7 +177,7 @@ const WebsiteDetail = () => {
                                 onClick={() => setIsAuthModalOpen(true)}
                                 className="px-8 py-3 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary-dark hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm flex items-center justify-center gap-2"
                             >
-                                Sign In / Connect Wallet
+                                Sign In / Register
                             </Button>
                             <Link to="/browse">
                                 <Button variant="outline" className="w-full sm:w-auto px-8 py-3 rounded-2xl text-sm font-semibold border-gray-200 text-gray-700 hover:bg-gray-50">
@@ -645,7 +645,7 @@ const WebsiteDetail = () => {
                     <form onSubmit={handleScamSubmit} className="space-y-4">
                         {!isConnected && (
                             <div className="p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm font-medium rounded-xl mb-4">
-                                ⚠️ You must connect your Web3 wallet first to verify your address as the reporter.
+                                ⚠️ You must sign in first to submit a report.
                             </div>
                         )}
                         <div>

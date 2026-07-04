@@ -159,7 +159,7 @@ const Home = () => {
                             <div className="relative flex items-center justify-center lg:p-8 xl:p-10 h-full order-first lg:order-last">
                                 <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[600px] xl:max-w-[650px] animate-float-slow drop-shadow-2xl">
                                     <img
-                                        src="/hero-new.png"
+                                        src="/hero-home.png"
                                         alt="Trusted Crypto Platforms - Verified & Scam Protected"
                                         className="w-full h-auto object-contain rounded-2xl"
                                     />
@@ -170,13 +170,13 @@ const Home = () => {
                 </section>
 
                 {/* Promo Banner Section */}
-                <section className="py-8 bg-slate-900 relative overflow-hidden">
-                    {/* Glowing background highlights */}
-                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-80 h-40 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
-                    <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-80 h-40 bg-purple-500/20 rounded-full blur-[100px] pointer-events-none" />
+                <section className="py-8 relative overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
+                    {/* Subtle decorative highlights */}
+                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-80 h-40 bg-indigo-300/20 rounded-full blur-[100px] pointer-events-none" />
+                    <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-80 h-40 bg-purple-300/20 rounded-full blur-[100px] pointer-events-none" />
                     
                     <div className="container-custom relative z-10">
-                        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl border border-slate-800/80 p-6 sm:p-8 md:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+                        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 md:p-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
                             {/* Decorative background grid pattern */}
                             <div className="absolute inset-0 opacity-[0.02] mix-blend-overlay" style={{
                                 backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
@@ -184,24 +184,24 @@ const Home = () => {
                             }} />
 
                             <div className="flex-1 text-center md:text-left space-y-3 relative z-10">
-                                <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/25 px-3 py-1 rounded-full">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                                    <span className="text-[10px] sm:text-xs font-black text-indigo-300 uppercase tracking-widest">Limited Offer</span>
+                                <div className="inline-flex items-center gap-2 bg-indigo-100 border border-indigo-300 px-3 py-1 rounded-full">
+                                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                    <span className="text-[10px] sm:text-xs font-black text-indigo-700 uppercase tracking-widest">Limited Offer</span>
                                 </div>
-                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
-                                    List Your Project For <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">100% FREE</span>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+                                    List Your Project For <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">100% FREE</span>
                                 </h2>
-                                <p className="text-sm sm:text-base text-slate-300 font-medium max-w-xl leading-relaxed">
+                                <p className="text-sm sm:text-base text-gray-600 font-medium max-w-xl leading-relaxed">
                                     Submit your project on our directory today. Use code below at checkout to activate your free Starter Plan listing!
                                 </p>
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto flex-shrink-0 justify-center">
                                 {/* Coupon badge */}
-                                <div className="flex items-center justify-between gap-3 bg-slate-950/80 border border-slate-800 rounded-2xl px-5 py-3.5 shadow-inner w-full sm:w-auto">
+                                <div className="flex items-center justify-between gap-3 bg-gray-100 border border-gray-300 rounded-2xl px-5 py-3.5 shadow-inner w-full sm:w-auto">
                                     <div>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Coupon Code</p>
-                                        <p className="font-mono text-lg font-black text-white tracking-widest mt-0.5 select-all">CST50</p>
+                                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Coupon Code</p>
+                                        <p className="font-mono text-lg font-black text-gray-900 tracking-widest mt-0.5 select-all">CST50</p>
                                     </div>
                                     <button 
                                         onClick={() => {
