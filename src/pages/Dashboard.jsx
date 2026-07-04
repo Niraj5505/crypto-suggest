@@ -1222,50 +1222,48 @@ const Dashboard = () => {
                                                         ) : (
                                                             <>
                                                                 {/* Coupon Code Section */}
-                                                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3 mb-3">
-                                                                    <p className="text-xs text-gray-700 font-bold">Promo Coupon Code</p>
-                                                                    <div className="flex gap-2">
-                                                                        <input
-                                                                            type="text"
-                                                                            value={couponInput}
-                                                                            onChange={e => { setCouponInput(e.target.value); setCouponError(''); }}
-                                                                            placeholder="Enter code (e.g. CST50)"
-                                                                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
-                                                                            disabled={couponApplied}
-                                                                        />
-                                                                        {couponApplied ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => { setCouponApplied(false); setCouponInput(''); setDiscountedPrice(null); setPaymentError(''); }}
-                                                                                className="px-3 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-bold hover:bg-red-200 transition-colors"
-                                                                            >
-                                                                                Remove
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button
-                                                                                type="button"
-                                                                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors"
-                                                                                onClick={() => {
-                                                                                    if (couponInput.trim().toUpperCase() === 'CST50') {
-                                                                                        if (plan.id === 'starter') {
+                                                                {plan.id === 'starter' && (
+                                                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3 mb-3">
+                                                                        <p className="text-xs text-gray-700 font-bold">Promo Coupon Code</p>
+                                                                        <div className="flex gap-2">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={couponInput}
+                                                                                onChange={e => { setCouponInput(e.target.value); setCouponError(''); }}
+                                                                                placeholder="Enter code (e.g. CST50)"
+                                                                                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
+                                                                                disabled={couponApplied}
+                                                                            />
+                                                                            {couponApplied ? (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => { setCouponApplied(false); setCouponInput(''); setDiscountedPrice(null); setPaymentError(''); }}
+                                                                                    className="px-3 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-bold hover:bg-red-200 transition-colors"
+                                                                                >
+                                                                                    Remove
+                                                                                </button>
+                                                                            ) : (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors"
+                                                                                    onClick={() => {
+                                                                                        if (couponInput.trim().toUpperCase() === 'CST50') {
                                                                                             setCouponApplied(true);
                                                                                             setDiscountedPrice(0);
                                                                                             setCouponError('');
                                                                                         } else {
-                                                                                            setCouponError('CST50 is only valid for the Starter plan.');
+                                                                                            setCouponError('Invalid coupon code.');
                                                                                         }
-                                                                                    } else {
-                                                                                        setCouponError('Invalid coupon code.');
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                Apply
-                                                                            </button>
-                                                                        )}
+                                                                                    }}
+                                                                                >
+                                                                                    Apply
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                        {couponError && <p className="text-[10px] text-red-600 font-semibold">{couponError}</p>}
+                                                                        {couponApplied && <p className="text-[10px] text-green-600 font-semibold">✓ Coupon applied: 100% OFF (Starter Free)</p>}
                                                                     </div>
-                                                                    {couponError && <p className="text-[10px] text-red-600 font-semibold">{couponError}</p>}
-                                                                    {couponApplied && <p className="text-[10px] text-green-600 font-semibold">✓ Coupon applied: 100% OFF (Starter Free)</p>}
-                                                                </div>
+                                                                )}
 
                                                                 {couponApplied && discountedPrice === 0 ? (
                                                                     /* Free Listing Promotion */
