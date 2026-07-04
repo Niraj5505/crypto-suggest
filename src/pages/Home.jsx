@@ -293,32 +293,27 @@ const Home = () => {
                 </section>
 
                 {/* ── Affiliate & Partner Program Section ── */}
-                <section className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
-                    {/* Background glow orbs */}
-                    <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-                    <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
-                    <div className="absolute top-1/2 right-0 w-[300px] h-[300px] bg-cyan-500/8 rounded-full blur-[80px] pointer-events-none" />
-
+                <section className="py-16 sm:py-24 relative overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
                     {/* Subtle dot grid overlay */}
-                    <div className="absolute inset-0 opacity-[0.025]" style={{
-                        backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
+                    <div className="absolute inset-0 opacity-[0.04]" style={{
+                        backgroundImage: `radial-gradient(circle, #6366f1 1px, transparent 1px)`,
                         backgroundSize: '28px 28px'
                     }} />
 
                     <div className="container-custom relative z-10">
                         {/* Section Header */}
                         <div className="text-center mb-12 sm:mb-16">
-                            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 px-4 py-1.5 rounded-full mb-4">
-                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                                <span className="text-xs font-black text-amber-300 uppercase tracking-widest">Affiliate Program</span>
+                            <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/40 px-4 py-1.5 rounded-full mb-4">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                <span className="text-xs font-black text-amber-700 uppercase tracking-widest">Affiliate Program</span>
                             </div>
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight mb-4">
                                 Invite Partners &amp; Earn Up To{' '}
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-orange-500 to-red-500">
                                     30% Commission
                                 </span>
                             </h2>
-                            <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
                                 Join our referral program and earn recurring commissions every time someone you refer subscribes to a plan on CryptoSuggest.
                             </p>
                         </div>
@@ -345,12 +340,12 @@ const Home = () => {
                                     desc: 'Earn up to 30% recurring commission on every successful subscription referral.'
                                 }
                             ].map((item, i) => (
-                                <div key={i} className="relative bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 hover:border-indigo-500/30 rounded-2xl p-6 sm:p-8 text-center transition-all duration-300 group">
+                                <div key={i} className="relative bg-white hover:bg-gray-50 border border-gray-200 hover:border-indigo-300 rounded-2xl p-6 sm:p-8 text-center transition-all duration-300 group shadow-sm hover:shadow-md">
                                     {/* Step number */}
-                                    <div className="absolute top-4 right-4 text-xs font-black text-slate-700 font-mono">{item.step}</div>
+                                    <div className="absolute top-4 right-4 text-xs font-black text-gray-300 font-mono">{item.step}</div>
                                     <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                                    <h3 className="text-white font-black text-base sm:text-lg mb-2">{item.title}</h3>
-                                    <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                                    <h3 className="text-gray-900 font-black text-base sm:text-lg mb-2">{item.title}</h3>
+                                    <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
                                 </div>
                             ))}
                         </div>
@@ -363,33 +358,36 @@ const Home = () => {
                                 { value: '$0', label: 'Cost to Join' },
                                 { value: '24h', label: 'Payout Processing' }
                             ].map((stat, i) => (
-                                <div key={i} className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 sm:p-6 text-center">
-                                    <p className="text-2xl sm:text-3xl font-black text-white mb-1">{stat.value}</p>
-                                    <p className="text-xs sm:text-sm font-semibold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                                <div key={i} className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 text-center shadow-sm">
+                                    <p className="text-2xl sm:text-3xl font-black text-indigo-600 mb-1">{stat.value}</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">{stat.label}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* CTA Card */}
-                        <div className="relative bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-indigo-600/20 border border-indigo-500/25 rounded-3xl p-8 sm:p-10 text-center overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/5 via-purple-500/5 to-pink-500/5 rounded-3xl" />
+                        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-3xl p-8 sm:p-10 text-center overflow-hidden shadow-xl">
+                            <div className="absolute inset-0 opacity-10" style={{
+                                backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
+                                backgroundSize: '20px 20px'
+                            }} />
                             <div className="relative z-10">
                                 <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-white mb-3">
                                     Ready to Start Earning?
                                 </h3>
-                                <p className="text-slate-300 text-sm sm:text-base mb-6 max-w-xl mx-auto">
+                                <p className="text-indigo-100 text-sm sm:text-base mb-6 max-w-xl mx-auto">
                                     Create your account to access your unique referral link and start earning commissions today.
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                                     <Link
                                         to="/dashboard"
-                                        className="h-12 px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-2xl text-sm font-black flex items-center gap-2 transition-all shadow-xl hover:shadow-amber-500/20 hover:-translate-y-0.5 active:scale-95"
+                                        className="h-12 px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-2xl text-sm font-black flex items-center gap-2 transition-all shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:scale-95"
                                     >
                                         Join Affiliate Program <ArrowRight className="w-4 h-4" />
                                     </Link>
                                     <Link
                                         to="/dashboard"
-                                        className="h-12 px-8 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-2xl text-sm font-bold flex items-center gap-2 transition-all"
+                                        className="h-12 px-8 bg-white/15 hover:bg-white/25 border border-white/30 text-white rounded-2xl text-sm font-bold flex items-center gap-2 transition-all"
                                     >
                                         View Dashboard
                                     </Link>
@@ -398,6 +396,7 @@ const Home = () => {
                         </div>
                     </div>
                 </section>
+
 
                 {/* Featured Websites - White BG */}
                 <section className="py-24 bg-white">
