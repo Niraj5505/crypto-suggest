@@ -1041,6 +1041,37 @@ app.put('/api/admin/users/:id/verify', adminProtect, async (req, res) => {
     }
 });
 
+// @desc    Impersonate user (Admin)
+// @route   POST /api/admin/users/:id/impersonate
+app.post('/api/admin/users/:id/impersonate', adminProtect, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Generate auth token for the user
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET || 'cryptosuggest_jwt_secret_key_123',
+            { expiresIn: '7d' }
+        );
+        
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                walletAddress: user.walletAddress
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error impersonating user', error: error.message });
+    }
+});
+
 // @desc    Get all user projects (Admin)
 // @route   GET /api/admin/projects
 app.get('/api/admin/projects', adminProtect, async (req, res) => {

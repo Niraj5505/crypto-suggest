@@ -15,7 +15,7 @@ import {
     getAdminReviews, deleteReview, getAdminUsers, getAdminProjects,
     updateUserBlockStatus, updateUserVerifyStatus,
     createAdminProject, updateAdminProject, deleteAdminProject,
-    loginAdmin
+    loginAdmin, impersonateUser
 } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -165,6 +165,7 @@ const Admin = () => {
     const [dbProjects,  setDbProjects]  = useState([]);
     const [subPayments, setSubPayments] = useState([]);
     const [loading,     setLoading]     = useState(false);
+    const [visiblePasswords, setVisiblePasswords] = useState({});
 
     /* derived database subscriptions */
     const dbSubs = useMemo(() => {
@@ -274,6 +275,42 @@ const Admin = () => {
     const handleToggleVerify = async (wallet, isVerified) => {
         try { await updateUserVerifyStatus(wallet, isVerified); showToast(isVerified ? 'User verified!' : 'User unverified!'); fetchServerData(); }
         catch (e) { showToast(e.message, 'error'); }
+    };
+
+    const togglePasswordVisibility = (userId) => {
+        setVisiblePasswords(prev => ({
+            ...prev,
+            [userId]: !prev[userId]
+        }));
+    };
+
+    const handleImpersonateUser = async (user) => {
+        if (!window.confirm(`Are you sure you want to log in as user: ${user.email || user.username || user.walletAddress}?`)) return;
+        try {
+            const data = await impersonateUser(user._id || user.id);
+            if (data.success) {
+                // Store user credentials to simulate their login session
+                localStorage.setItem('authToken', data.token);
+                
+                const connection = {
+                    isConnected: true,
+                    address: data.user.walletAddress,
+                    username: data.user.username,
+                    email: data.user.email,
+                    connectedAt: Date.now()
+                };
+                localStorage.setItem('walletConnection', JSON.stringify(connection));
+                
+                showToast(`Logged in successfully as ${user.email || user.username}! Redirecting...`);
+                
+                // Redirect to user dashboard
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1500);
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to login as user', 'error');
+        }
     };
 
     const openAddProject = () => {
@@ -670,7 +707,8 @@ const Admin = () => {
                                     <table className="w-full text-sm">
                                         <thead><tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             <th className="py-4 px-6 text-left">#</th>
-                                            <th className="py-4 px-6 text-left">Wallet Address</th>
+                                            <th className="py-4 px-6 text-left">Wallet / Email Address</th>
+                                            <th className="py-4 px-6 text-left">Password Hash</th>
                                             <th className="py-4 px-6 text-left">Plan</th>
                                             <th className="py-4 px-6 text-left">Status</th>
                                             <th className="py-4 px-6 text-left">Projects</th>
@@ -701,44 +739,64 @@ const Admin = () => {
                                                                 </div>
                                                             </td>
                                                             <td className="py-4 px-6">
+                                                                <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 w-fit">
+                                                                    <span className="font-mono text-xs text-slate-600">
+                                                                        {visiblePasswords[u._id] 
+                                                                            ? (u.password || 'No Password') 
+                                                                            : '••••••••••••••••'}
+                                                                    </span>
+                                                                    <button 
+                                                                        onClick={() => togglePasswordVisibility(u._id)}
+                                                                        className="p-1 hover:bg-slate-200 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+                                                                        title={visiblePasswords[u._id] ? "Hide password hash" : "Show password hash"}
+                                                                    >
+                                                                        {visiblePasswords[u._id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-4 px-6">
                                                                 {planMeta
                                                                     ? <span className={`text-xs font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r ${planMeta.gradient}`}>{planMeta.label}</span>
                                                                     : <span className="text-xs text-slate-400 italic">Free</span>}
-                                                            </td>
-                                                            <td className="py-4 px-6">
-                                                                <div className="flex flex-col gap-1 items-start">
-                                                                    {u.isVerified ? (
-                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-100 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Verified</span>
-                                                                    ) : (
-                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 border border-slate-100">Unverified</span>
-                                                                    )}
-                                                                    {u.isBlocked && (
-                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3" /> Blocked</span>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                            <td className="py-4 px-6">
-                                                                <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
-                                                                    <Folder className="w-3.5 h-3.5 text-indigo-400" /> {projCount}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 px-6 text-xs text-slate-400">{u.subscribedAt ? formatDate(u.subscribedAt) : '—'}</td>
-                                                            <td className="py-4 px-6 text-right">
-                                                                <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
-                                                                    <button onClick={() => handleToggleVerify(u._id, !u.isVerified)}
-                                                                        className={`w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold transition-colors ${u.isVerified ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-                                                                        {u.isVerified ? 'Remove Verification' : 'Verify Account'}
-                                                                    </button>
-                                                                    <button onClick={() => handleToggleBlock(u._id, !u.isBlocked)}
-                                                                        className={`w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold transition-colors ${u.isBlocked ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
-                                                                        {u.isBlocked ? 'Unblock' : 'Block User'}
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                        </tbody>
+                                                                </td>
+                                                                <td className="py-4 px-6">
+                                                                    <div className="flex flex-col gap-1 items-start">
+                                                                        {u.isVerified ? (
+                                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-100 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Verified</span>
+                                                                        ) : (
+                                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 border border-slate-100">Unverified</span>
+                                                                        )}
+                                                                        {u.isBlocked && (
+                                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3" /> Blocked</span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-4 px-6">
+                                                                    <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                                                                        <Folder className="w-3.5 h-3.5 text-indigo-400" /> {projCount}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-4 px-6 text-xs text-slate-400">{u.subscribedAt ? formatDate(u.subscribedAt) : '—'}</td>
+                                                                <td className="py-4 px-6 text-right">
+                                                                    <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
+                                                                        <button onClick={() => handleImpersonateUser(u)}
+                                                                            className="w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold bg-indigo-650 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1">
+                                                                            <Zap className="w-3 h-3" /> Login As
+                                                                        </button>
+                                                                        <button onClick={() => handleToggleVerify(u._id, !u.isVerified)}
+                                                                            className={`w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold transition-colors ${u.isVerified ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                                                                            {u.isVerified ? 'Remove Verification' : 'Verify Account'}
+                                                                        </button>
+                                                                        <button onClick={() => handleToggleBlock(u._id, !u.isBlocked)}
+                                                                            className={`w-full sm:w-auto h-8 px-3 rounded-lg text-[11px] font-bold transition-colors ${u.isBlocked ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
+                                                                            {u.isBlocked ? 'Unblock' : 'Block User'}
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                            </tbody>
                                     </table>
                                 </div>
                             )}

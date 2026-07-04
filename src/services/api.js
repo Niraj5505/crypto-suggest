@@ -574,6 +574,23 @@ export const getAdminUsers = async () => {
     }
 };
 
+export const impersonateUser = async (userId) => {
+    try {
+        const response = await fetch(`${API_URL}/admin/users/${userId}/impersonate`, {
+            method: 'POST',
+            headers: getAdminHeaders()
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Impersonation failed');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error during impersonation:', error);
+        throw error;
+    }
+};
+
 export const getAdminProjects = async () => {
     try {
         const response = await fetch(`${API_URL}/admin/projects`, {
