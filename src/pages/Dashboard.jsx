@@ -169,64 +169,62 @@ const PLANS = [
     {
         id: 'starter',
         name: 'Starter',
-        price: 199,
-        period: 'month',
+        price: 99,
+        period: 'one-time',
         gradient: 'from-blue-500 to-cyan-500',
         glow: 'shadow-blue-200',
         icon: Zap,
         badge: null,
-        tagline: 'Perfect to get started',
+        tagline: '30 Days Listing',
         features: [
-            { text: 'Up to 5 Projects',          included: true },
-            { text: 'Basic Scam Reports',         included: true },
+            { text: '30 Days Listing',          included: true },
+            { text: 'Project Profile',           included: true },
+            { text: 'Token Information',         included: true },
+            { text: 'Website & Social Links',    included: true },
+            { text: 'Whitepaper Link',           included: true },
+            { text: 'Category Listing',          included: true },
             { text: 'Community Badge',            included: true },
-            { text: 'Email Support',              included: true },
-            { text: 'API Access (100 req/day)',   included: true },
-            { text: 'Priority Listing',           included: false },
-            { text: 'Advanced Analytics',         included: false },
-            { text: 'Dedicated Account Manager',  included: false },
+            { text: 'Email Support',             included: true },
         ],
     },
     {
         id: 'pro',
         name: 'Pro',
-        price: 499,
-        period: 'month',
+        price: 199,
+        period: 'one-time',
         gradient: 'from-violet-600 to-purple-600',
         glow: 'shadow-purple-200',
         icon: Crown,
         badge: 'Most Popular',
-        tagline: 'For serious crypto builders',
+        tagline: '60 Days Listing & Features',
         features: [
-            { text: 'Unlimited Projects',         included: true },
-            { text: 'Priority Scam Reporting',    included: true },
-            { text: 'Verified Creator Badge',     included: true },
-            { text: 'Priority Support (24h)',     included: true },
-            { text: 'API Access (5K req/day)',    included: true },
-            { text: 'Priority Listing',           included: true },
-            { text: 'Advanced Analytics',         included: false },
-            { text: 'Dedicated Account Manager',  included: false },
+            { text: 'Everything in Starter',     included: true },
+            { text: '60 Days Listing',           included: true },
+            { text: 'Featured Project Badge',    included: true },
+            { text: 'Homepage Featured Section', included: true },
+            { text: 'Priority Review',           included: true },
+            { text: 'Social Media Promotion (1 Post)', included: true },
+            { text: 'Priority Support',          included: true },
         ],
     },
     {
-        id: 'enterprise',
-        name: 'Enterprise',
-        price: 999,
-        period: 'month',
+        id: 'premium',
+        name: 'Premium',
+        price: 299,
+        period: 'one-time',
         gradient: 'from-amber-500 to-orange-500',
         glow: 'shadow-orange-200',
         icon: Gem,
         badge: 'Best Value',
-        tagline: 'Full power for enterprises',
+        tagline: '90 Days Premium Listing',
         features: [
-            { text: 'Unlimited Projects',         included: true },
-            { text: 'Unlimited Scam Reports',     included: true },
-            { text: 'Gold Verified Badge',        included: true },
-            { text: 'Dedicated Support (1h SLA)', included: true },
-            { text: 'API Access (Unlimited)',     included: true },
-            { text: 'Priority Listing',           included: true },
-            { text: 'Advanced Analytics',         included: true },
-            { text: 'Dedicated Account Manager',  included: true },
+            { text: 'Everything in Pro',         included: true },
+            { text: '90 Days Premium Listing',   included: true },
+            { text: 'Homepage Hero Placement',   included: true },
+            { text: 'Gold Verified Badge',       included: true },
+            { text: 'Homepage Slider Feature',   included: true },
+            { text: 'Newsletter Feature',        included: true },
+            { text: 'Priority Support',          included: true },
         ],
     },
 ];
@@ -273,6 +271,10 @@ const Dashboard = () => {
     const [paymentSubmitted, setPaymentSubmitted]   = useState(false);
     const [paymentError, setPaymentError]           = useState('');
     const [pendingPayments, setPendingPayments]     = useState([]);
+    const [couponInput, setCouponInput]             = useState('');
+    const [couponError, setCouponError]             = useState('');
+    const [couponApplied, setCouponApplied]         = useState(false);
+    const [discountedPrice, setDiscountedPrice]     = useState(null);
 
     /* project management state */
     const [projects, setProjects]               = useState([]);
@@ -1128,12 +1130,12 @@ const Dashboard = () => {
                                                     <plan.icon className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Current Plan</p>
-                                                    <p className="font-black text-lg">{plan.name} — ${plan.price}<span className="text-white/70 text-sm font-normal">/mo</span></p>
+                                                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Active Plan</p>
+                                                    <p className="font-black text-lg">{plan.name} — ${plan.price}<span className="text-white/70 text-xs font-normal ml-1">(One-Time Payment)</span></p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-white/60 text-[10px] font-bold uppercase">Renewed</p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase">Activated</p>
                                                 <p className="text-sm font-bold">{new Date(activePlan.subscribedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                                             </div>
                                         </div>
@@ -1174,9 +1176,9 @@ const Dashboard = () => {
                                                 </div>
                                                 <p className="font-black text-xl">{plan.name}</p>
                                                 <p className="text-white/70 text-xs mt-0.5 mb-4">{plan.tagline}</p>
-                                                <div className="flex items-end gap-1">
+                                                <div className="flex flex-col mt-3">
                                                     <span className="text-4xl font-black">${plan.price}</span>
-                                                    <span className="text-white/60 text-sm pb-1">/month</span>
+                                                    <span className="text-white/80 text-[10px] font-bold uppercase tracking-wider mt-1">One-Time Payment</span>
                                                 </div>
                                             </div>
 
@@ -1219,96 +1221,156 @@ const Dashboard = () => {
                                                             </div>
                                                         ) : (
                                                             <>
-                                                                {/* Step 1 – Network tabs */}
-                                                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3">
-                                                                    <p className="text-xs text-gray-700 font-bold">1. Select network & send <span className="text-indigo-600">${plan.price}</span> (USDT/USDC/ETH/TRX):</p>
-
-                                                                    {/* Network Toggle */}
-                                                                    <div className="flex bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
-                                                                        {['ERC20', 'TRC20'].map(net => (
+                                                                {/* Coupon Code Section */}
+                                                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3 mb-3">
+                                                                    <p className="text-xs text-gray-700 font-bold">Promo Coupon Code</p>
+                                                                    <div className="flex gap-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={couponInput}
+                                                                            onChange={e => { setCouponInput(e.target.value); setCouponError(''); }}
+                                                                            placeholder="Enter code (e.g. CST50)"
+                                                                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
+                                                                            disabled={couponApplied}
+                                                                        />
+                                                                        {couponApplied ? (
                                                                             <button
-                                                                                key={net}
                                                                                 type="button"
-                                                                                onClick={() => setSelectedNetwork(net)}
-                                                                                className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${
-                                                                                    selectedNetwork === net
-                                                                                        ? 'bg-indigo-600 text-white shadow-sm'
-                                                                                        : 'text-gray-500 hover:text-gray-800'
-                                                                                }`}
+                                                                                onClick={() => { setCouponApplied(false); setCouponInput(''); setDiscountedPrice(null); setPaymentError(''); }}
+                                                                                className="px-3 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-bold hover:bg-red-200 transition-colors"
                                                                             >
-                                                                                {net === 'ERC20' ? 'ERC20 / BEP20' : 'TRC20 (Tron)'}
+                                                                                Remove
                                                                             </button>
-                                                                        ))}
+                                                                        ) : (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors"
+                                                                                onClick={() => {
+                                                                                    if (couponInput.trim().toUpperCase() === 'CST50') {
+                                                                                        if (plan.id === 'starter') {
+                                                                                            setCouponApplied(true);
+                                                                                            setDiscountedPrice(0);
+                                                                                            setCouponError('');
+                                                                                        } else {
+                                                                                            setCouponError('CST50 is only valid for the Starter plan.');
+                                                                                        }
+                                                                                    } else {
+                                                                                        setCouponError('Invalid coupon code.');
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                Apply
+                                                                            </button>
+                                                                        )}
                                                                     </div>
-
-                                                                    {selectedNetwork === 'ERC20' ? (
-                                                                        <div className="flex gap-3 items-start">
-                                                                            {/* QR Code ERC20 */}
-                                                                            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
-                                                                                <img
-                                                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=0x185018c5f26B2cE105e0B80b231178CE5913b621`}
-                                                                                    alt="ERC20 QR Code"
-                                                                                    className="w-20 h-20"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">ETH / BSC / Polygon</p>
-                                                                                <p
-                                                                                    className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
-                                                                                    title="Click to copy"
-                                                                                    onClick={() => { navigator.clipboard.writeText('0x185018c5f26B2cE105e0B80b231178CE5913b621'); alert('Address copied!'); }}
-                                                                                >
-                                                                                    0x185018c5f26B2cE105e0B80b231178CE5913b621
-                                                                                </p>
-                                                                                <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="flex gap-3 items-start">
-                                                                            {/* QR Code TRC20 */}
-                                                                            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
-                                                                                <img
-                                                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ`}
-                                                                                    alt="TRC20 QR Code"
-                                                                                    className="w-20 h-20"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">TRON Network</p>
-                                                                                <p
-                                                                                    className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
-                                                                                    title="Click to copy"
-                                                                                    onClick={() => { navigator.clipboard.writeText('TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ'); alert('Address copied!'); }}
-                                                                                >
-                                                                                    TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ
-                                                                                </p>
-                                                                                <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
+                                                                    {couponError && <p className="text-[10px] text-red-600 font-semibold">{couponError}</p>}
+                                                                    {couponApplied && <p className="text-[10px] text-green-600 font-semibold">✓ Coupon applied: 100% OFF (Starter Free)</p>}
                                                                 </div>
 
-                                                                {/* Step 2 – Enter TX hash */}
-                                                                <div className="space-y-1.5">
-                                                                    <p className="text-xs text-gray-700 font-bold">2. Paste your transaction hash:</p>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={txHash}
-                                                                        onChange={e => { setTxHash(e.target.value); setPaymentError(''); }}
-                                                                        placeholder="e.g. 0xabc123... or TXabc123..."
-                                                                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
-                                                                    />
-                                                                    {paymentError && (
-                                                                        <p className="text-[10px] text-red-600 font-medium">{paymentError}</p>
-                                                                    )}
-                                                                </div>
+                                                                {couponApplied && discountedPrice === 0 ? (
+                                                                    /* Free Listing Promotion */
+                                                                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-left space-y-2 mb-3 animate-fade-in">
+                                                                        <p className="text-xs text-emerald-800 font-bold">1. Free Listing Promotion</p>
+                                                                        <p className="text-xs text-emerald-700 leading-relaxed">
+                                                                            You are claiming a free Starter plan listing using coupon code <strong>CST50</strong> (limited to first 50 projects). No payment needed.
+                                                                        </p>
+                                                                    </div>
+                                                                ) : (
+                                                                    /* Paid Checkout Steps */
+                                                                    <>
+                                                                        {/* Step 1 – Network tabs */}
+                                                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left space-y-3">
+                                                                            <p className="text-xs text-gray-700 font-bold">1. Select network & send <span className="text-indigo-600">${plan.price}</span> (USDT/USDC/ETH/TRX):</p>
+
+                                                                            {/* Network Toggle */}
+                                                                            <div className="flex bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+                                                                                {['ERC20', 'TRC20'].map(net => (
+                                                                                    <button
+                                                                                        key={net}
+                                                                                        type="button"
+                                                                                        onClick={() => setSelectedNetwork(net)}
+                                                                                        className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${
+                                                                                            selectedNetwork === net
+                                                                                                ? 'bg-indigo-600 text-white shadow-sm'
+                                                                                                : 'text-gray-500 hover:text-gray-800'
+                                                                                        }`}
+                                                                                    >
+                                                                                        {net === 'ERC20' ? 'ERC20 / BEP20' : 'TRC20 (Tron)'}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+
+                                                                            {selectedNetwork === 'ERC20' ? (
+                                                                                <div className="flex gap-3 items-start">
+                                                                                    {/* QR Code ERC20 */}
+                                                                                    <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
+                                                                                        <img
+                                                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=0x185018c5f26B2cE105e0B80b231178CE5913b621`}
+                                                                                            alt="ERC20 QR Code"
+                                                                                            className="w-20 h-20"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">ETH / BSC / Polygon</p>
+                                                                                        <p
+                                                                                            className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
+                                                                                            title="Click to copy"
+                                                                                            onClick={() => { navigator.clipboard.writeText('0x185018c5f26B2cE105e0B80b231178CE5913b621'); alert('Address copied!'); }}
+                                                                                        >
+                                                                                            0x185018c5f26B2cE105e0B80b231178CE5913b621
+                                                                                        </p>
+                                                                                        <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex gap-3 items-start">
+                                                                                    {/* QR Code TRC20 */}
+                                                                                    <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-1.5">
+                                                                                        <img
+                                                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=88x88&data=TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ`}
+                                                                                            alt="TRC20 QR Code"
+                                                                                            className="w-20 h-20"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">TRON Network</p>
+                                                                                        <p
+                                                                                            className="text-[10px] font-mono font-medium text-gray-800 break-all select-all cursor-pointer bg-white border border-gray-200 rounded p-1.5 hover:bg-indigo-50 transition-colors"
+                                                                                            title="Click to copy"
+                                                                                            onClick={() => { navigator.clipboard.writeText('TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ'); alert('Address copied!'); }}
+                                                                                        >
+                                                                                            TTxvENzgpX7yqp4Z2auHTWxVMAEA5GRSsJ
+                                                                                        </p>
+                                                                                        <p className="text-[9px] text-gray-400 mt-1">Tap address to copy</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* Step 2 – Enter TX hash */}
+                                                                        <div className="space-y-1.5 mb-3">
+                                                                            <p className="text-xs text-gray-700 font-bold">2. Paste your transaction hash:</p>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={txHash}
+                                                                                onChange={e => { setTxHash(e.target.value); setPaymentError(''); }}
+                                                                                placeholder="e.g. 0xabc123... or TXabc123..."
+                                                                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white placeholder:text-gray-300"
+                                                                            />
+                                                                        </div>
+                                                                    </>
+                                                                )}
+
+                                                                {paymentError && (
+                                                                    <p className="text-[10px] text-red-600 font-medium mb-3">{paymentError}</p>
+                                                                )}
 
                                                                 {/* Submit + Cancel */}
                                                                 <div className="flex gap-2">
                                                                     <button
                                                                         disabled={paymentSubmitting}
                                                                         onClick={async () => {
-                                                                            if (!txHash.trim()) {
+                                                                            if (!couponApplied && !txHash.trim()) {
                                                                                 setPaymentError('Please enter your transaction hash.');
                                                                                 return;
                                                                             }
@@ -1316,15 +1378,23 @@ const Dashboard = () => {
                                                                             setPaymentError('');
                                                                             try {
                                                                                 const API_URL = import.meta.env.VITE_API_URL || '/api';
+                                                                                const payload = couponApplied ? {
+                                                                                    planId: plan.id,
+                                                                                    planPrice: 0,
+                                                                                    couponCode: 'CST50',
+                                                                                    network: 'COUPON',
+                                                                                    txHash: `COUPON_CST50_${walletAddress.slice(2, 10)}_${Date.now()}`
+                                                                                } : {
+                                                                                    planId: plan.id,
+                                                                                    planPrice: plan.price,
+                                                                                    network: selectedNetwork,
+                                                                                    txHash: txHash.trim()
+                                                                                };
+
                                                                                 const res = await fetch(`${API_URL}/users/${walletAddress}/subscription-payment`, {
                                                                                     method: 'POST',
                                                                                     headers: { 'Content-Type': 'application/json' },
-                                                                                    body: JSON.stringify({
-                                                                                        planId: plan.id,
-                                                                                        planPrice: plan.price,
-                                                                                        network: selectedNetwork,
-                                                                                        txHash: txHash.trim()
-                                                                                    })
+                                                                                    body: JSON.stringify(payload)
                                                                                 });
                                                                                 const data = await res.json();
                                                                                 if (!res.ok) {
@@ -1332,6 +1402,13 @@ const Dashboard = () => {
                                                                                 } else {
                                                                                     setPaymentSubmitted(true);
                                                                                     setTxHash('');
+                                                                                    if (couponApplied) {
+                                                                                        setActivePlan({
+                                                                                            planId: plan.id,
+                                                                                            subscribedAt: Date.now(),
+                                                                                            price: 0
+                                                                                        });
+                                                                                    }
                                                                                 }
                                                                             } catch (err) {
                                                                                 setPaymentError('Network error. Make sure the server is running.');
@@ -1343,12 +1420,22 @@ const Dashboard = () => {
                                                                     >
                                                                         {paymentSubmitting ? (
                                                                             <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                        ) : couponApplied ? (
+                                                                            '🎁 Claim Free Listing'
                                                                         ) : (
                                                                             '✅ Submit for Approval'
                                                                         )}
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => { setSubConfirm(null); setTxHash(''); setPaymentError(''); setPaymentSubmitted(false); }}
+                                                                        onClick={() => {
+                                                                            setSubConfirm(null);
+                                                                            setTxHash('');
+                                                                            setCouponInput('');
+                                                                            setCouponApplied(false);
+                                                                            setDiscountedPrice(null);
+                                                                            setPaymentError('');
+                                                                            setPaymentSubmitted(false);
+                                                                        }}
                                                                         className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition-all"
                                                                     >
                                                                         Cancel

@@ -22,16 +22,20 @@ const subscriptionPaymentSchema = new mongoose.Schema({
     planId: {
         type: String,
         required: true,
-        enum: ['starter', 'pro', 'enterprise']
+        enum: ['starter', 'pro', 'premium', 'enterprise']
     },
     planPrice: {
         type: Number,
         required: true
     },
+    couponCode: {
+        type: String,
+        default: ''
+    },
     network: {
         type: String,
         required: true,
-        enum: ['ERC20', 'TRC20']
+        enum: ['ERC20', 'TRC20', 'COUPON']
     },
     txHash: {
         type: String,

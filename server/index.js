@@ -625,13 +625,65 @@ app.put('/api/users/:walletAddress/subscription', async (req, res) => {
     }
 });
 
-// @desc    Submit subscription payment for admin approval
+// @desc    Submit subscription payment for admin approval or apply coupon
 // @route   POST /api/users/:walletAddress/subscription-payment
 app.post('/api/users/:walletAddress/subscription-payment', async (req, res) => {
     try {
         const walletAddress = req.params.walletAddress.toLowerCase();
-        const { planId, planPrice, network, txHash } = req.body;
+        const { planId, planPrice, network, txHash, couponCode } = req.body;
 
+        const user = await User.findOne({ walletAddress });
+
+        // Handle coupon code CST50
+        if (couponCode && couponCode.trim().toUpperCase() === 'CST50') {
+            if (planId !== 'starter') {
+                return res.status(400).json({ message: 'Coupon code CST50 is only valid for the Starter plan.' });
+            }
+
+            // Check if coupon code usage limit has been reached (50 globally)
+            const couponUsageCount = await SubscriptionPayment.countDocuments({
+                couponCode: 'CST50',
+                status: { $in: ['pending', 'approved'] }
+            });
+
+            if (couponUsageCount >= 50) {
+                return res.status(400).json({ message: 'Coupon code limit reached (max 50 users).' });
+            }
+
+            // Create approved payment record
+            const mockTxHash = `COUPON_CST50_${walletAddress.slice(2, 10)}_${Date.now()}`;
+            const payment = new SubscriptionPayment({
+                walletAddress,
+                userId: user?._id,
+                username: user?.username,
+                email: user?.email,
+                planId: 'starter',
+                planPrice: 0,
+                couponCode: 'CST50',
+                network: 'COUPON',
+                txHash: mockTxHash,
+                status: 'approved',
+                reviewedAt: new Date(),
+                adminNote: 'Auto-approved via coupon code CST50.'
+            });
+
+            await payment.save();
+
+            // Activate user's subscription immediately
+            if (user) {
+                user.subscribedPlan = 'starter';
+                user.subscribedAt = Date.now();
+                await user.save();
+            }
+
+            return res.status(201).json({
+                success: true,
+                message: 'Coupon code applied successfully! Your Starter plan is now active.',
+                payment
+            });
+        }
+
+        // Regular payment flow
         if (!planId || !planPrice || !network || !txHash) {
             return res.status(400).json({ message: 'planId, planPrice, network, and txHash are all required.' });
         }
@@ -641,8 +693,6 @@ app.post('/api/users/:walletAddress/subscription-payment', async (req, res) => {
         if (exists) {
             return res.status(400).json({ message: 'This transaction hash has already been submitted.' });
         }
-
-        const user = await User.findOne({ walletAddress });
 
         const payment = new SubscriptionPayment({
             walletAddress,

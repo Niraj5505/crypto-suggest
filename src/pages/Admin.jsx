@@ -49,8 +49,9 @@ const reviewSubPayment = async (id, action, adminNote = '') => {
 import logoSrc from '../assets/logo.png';
 
 /* ─────────────────── helpers ─────────────────── */
-const SUB_PLANS = { starter: { label: 'Starter', price: 199, gradient: 'from-blue-500 to-cyan-500' },
-                    pro:     { label: 'Pro',     price: 499, gradient: 'from-violet-600 to-purple-600' },
+const SUB_PLANS = { starter: { label: 'Starter', price: 99, gradient: 'from-blue-500 to-cyan-500' },
+                    pro:     { label: 'Pro',     price: 199, gradient: 'from-violet-600 to-purple-600' },
+                    premium: { label: 'Premium', price: 299, gradient: 'from-amber-500 to-orange-500' },
                     enterprise: { label: 'Enterprise', price: 999, gradient: 'from-amber-500 to-orange-500' } };
 
 const SCAM_STATUS = {
@@ -605,7 +606,7 @@ const Admin = () => {
                                         <button onClick={() => setActiveTab('subscriptions')} className="text-xs text-blue-600 font-bold hover:underline">View All →</button>
                                     </div>
                                     <div className="p-6 grid grid-cols-3 gap-3">
-                                        {['starter','pro','enterprise'].map(pid => {
+                                        {['starter','pro','premium'].map(pid => {
                                             const plan = SUB_PLANS[pid];
                                             const cnt  = dbSubs.filter(s => s.planId === pid).length;
                                             return (
@@ -961,7 +962,7 @@ const Admin = () => {
                         <div className="space-y-6">
                             {/* plan summary cards */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {['starter','pro','enterprise'].map(pid => {
+                                {['starter','pro','premium'].map(pid => {
                                     const plan = SUB_PLANS[pid];
                                     const cnt  = dbSubs.filter(s => s.planId === pid).length;
                                     const rev  = cnt * plan.price;
@@ -987,7 +988,7 @@ const Admin = () => {
                                         <option value="all">All Plans</option>
                                         <option value="starter">Starter</option>
                                         <option value="pro">Pro</option>
-                                        <option value="enterprise">Enterprise</option>
+                                        <option value="premium">Premium</option>
                                     </select>
                                 </SectionHead>
                                 {dbSubs.length === 0 ? <Empty icon={CreditCard} text="No subscriptions found" /> : (
@@ -1096,7 +1097,7 @@ const Admin = () => {
                                                     <th className="py-4 px-4 text-left">TX Hash</th>
                                                     <th className="py-4 px-4 text-center">Status</th>
                                                     <th className="py-4 px-4 text-center">Date</th>
-                                                    <th className="py-4 px-4 text-right">Actions</th>
+                                            <th className="py-4 px-4 text-right">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
@@ -1112,7 +1113,7 @@ const Admin = () => {
                                                                 payment.planId === 'pro' ? 'from-violet-600 to-purple-600' :
                                                                 'from-amber-500 to-orange-500'
                                                             }`}>
-                                                                {payment.planId} · ${payment.planPrice}
+                                                                {payment.planId} · {payment.couponCode ? `Free (${payment.couponCode})` : `$${payment.planPrice}`}
                                                             </span>
                                                         </td>
                                                         <td className="py-3 px-4">
