@@ -76,7 +76,7 @@ const WelcomePromoModal = () => {
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -84,37 +84,47 @@ const WelcomePromoModal = () => {
             />
 
             {/* Modal Container */}
-            <div className="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden animate-fade-in border border-slate-100 z-10 flex flex-col md:flex-row min-h-[500px]">
+            <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto animate-fade-in border border-slate-100 z-10 flex flex-col md:flex-row">
+                
+                {/* Close Button (Mobile Absolute Top Right) */}
+                <button
+                    onClick={handleClose}
+                    className="md:hidden absolute top-3 right-3 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors z-20 backdrop-blur-md"
+                    aria-label="Close dialog"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
                 {/* Left Side: Launch Special Promo */}
-                <div className="md:w-1/2 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-8 text-white flex flex-col justify-between relative overflow-hidden">
+                <div className="md:w-1/2 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-6 sm:p-8 text-white flex flex-col justify-between relative overflow-hidden flex-shrink-0">
                     {/* Decorative Background Highlights */}
                     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent pointer-events-none" />
                     
-                    <div className="relative z-10 space-y-6">
-                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-1.5 rounded-full shadow-sm">
+                    <div className="relative z-10 space-y-4 sm:space-y-6 mt-4 md:mt-0">
+                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-sm">
                             <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                             <span className="text-[10px] font-black uppercase tracking-wider">Launch Special 🚀</span>
                         </div>
                         
-                        <div className="space-y-3">
-                            <h3 className="text-3xl font-black leading-tight tracking-tight">
-                                First 50 Projects get <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">FREE Premium Listing</span>
+                        <div className="space-y-2 sm:space-y-3">
+                            <h3 className="text-2xl sm:text-3xl font-black leading-tight tracking-tight">
+                                First 50 Projects get <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">FREE Premium</span>
                             </h3>
-                            <p className="text-sm text-gray-300 font-medium">
+                            <p className="text-xs sm:text-sm text-gray-300 font-medium">
                                 Register your account now to claim a complimentary premium website submission.
                             </p>
                         </div>
 
-                        {/* Features list */}
-                        <div className="space-y-3.5 pt-2">
+                        {/* Features list - Hidden on very small screens to save space */}
+                        <div className="hidden xs:block space-y-2.5 sm:space-y-3.5 pt-2">
                             {[
                                 'FREE Premium Listing',
                                 'Homepage Feature Section',
                                 'Dofollow SEO Backlink',
                                 'Verified Safety Badge'
                             ].map((feat, i) => (
-                                <div key={i} className="flex items-center gap-3 text-gray-200 font-semibold text-sm">
-                                    <span className="w-5 h-5 rounded-full bg-white/10 text-emerald-400 flex items-center justify-center border border-white/10 text-xs">✓</span>
+                                <div key={i} className="flex items-center gap-3 text-gray-200 font-semibold text-xs sm:text-sm">
+                                    <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/10 text-emerald-400 flex items-center justify-center border border-white/10 text-[10px] sm:text-xs">✓</span>
                                     <span>{feat}</span>
                                 </div>
                             ))}
@@ -122,23 +132,23 @@ const WelcomePromoModal = () => {
                     </div>
 
                     {/* Value Indicator Footer */}
-                    <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                    <div className="relative z-10 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/10 flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Value</p>
-                            <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 font-mono">$99</p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Total Value</p>
+                            <p className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 font-mono">$99</p>
                         </div>
-                        <div className="bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-wider text-emerald-400">
+                        <div className="bg-white/10 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-white/10 text-[10px] sm:text-xs font-black uppercase tracking-wider text-emerald-400">
                             100% Free
                         </div>
                     </div>
                 </div>
 
                 {/* Right Side: Signup Form */}
-                <div className="md:w-1/2 p-8 flex flex-col justify-center relative">
-                    {/* Close Button */}
+                <div className="md:w-1/2 p-6 sm:p-8 flex flex-col justify-center relative">
+                    {/* Close Button (Desktop Only) */}
                     <button
                         onClick={handleClose}
-                        className="absolute top-5 right-5 p-2 bg-gray-50 hover:bg-gray-150 text-gray-500 hover:text-gray-800 rounded-full transition-colors z-20"
+                        className="hidden md:flex absolute top-5 right-5 p-2 bg-gray-50 hover:bg-gray-150 text-gray-500 hover:text-gray-800 rounded-full transition-colors z-20"
                         aria-label="Close dialog"
                     >
                         <X className="w-4 h-4" />
