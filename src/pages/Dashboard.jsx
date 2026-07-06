@@ -286,6 +286,16 @@ const getDeterministicViews = (name) => {
 /* ─────────────────── MAIN COMPONENT ─────────────────── */
 const Dashboard = () => {
     const { isConnected, walletAddress, walletType, connectedAt, getTruncatedAddress, disconnectWallet, user } = useWallet();
+    const [sitesViewed, setSitesViewed] = useState(0);
+
+    useEffect(() => {
+        try {
+            const visited = JSON.parse(localStorage.getItem('cs_visited_sites') || '[]');
+            setSitesViewed(visited.length);
+        } catch (e) {
+            console.error(e);
+        }
+    }, []);
 
     /* subscription state */
     const [activePlan, setActivePlan]         = useState(() => loadSubscription(walletAddress));
@@ -2941,7 +2951,7 @@ const Dashboard = () => {
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <StatCard icon={Bookmark} label="Bookmarks" value={bookmarks?.length ?? 0} color="text-purple-700" bg="bg-white" />
                                 <StatCard icon={Star} label="Reviews" value={myReviews.length} color="text-yellow-600" bg="bg-white" />
-                                <StatCard icon={Eye} label="Sites Viewed" value="24" color="text-blue-700" bg="bg-white" />
+                                <StatCard icon={Eye} label="Sites Viewed" value={sitesViewed} color="text-blue-700" bg="bg-white" />
                                 <StatCard icon={Heart} label="Helpful Votes" value={myReviews.reduce((sum, rev) => sum + (rev.helpful || 0), 0)} color="text-pink-600" bg="bg-white" />
                             </div>
 

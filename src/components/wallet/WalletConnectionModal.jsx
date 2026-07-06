@@ -4,14 +4,21 @@ import { X, Mail, Phone, User, Lock, Sparkles, AlertCircle, Eye, EyeOff } from '
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 
-const WalletConnectionModal = ({ isOpen, onClose }) => {
+const WalletConnectionModal = ({ isOpen, onClose, initialTab = 'login', redirectPath = '/dashboard' }) => {
     const { login, register } = useWallet();
     const navigate = useNavigate();
     
-    const [isLoginTab, setIsLoginTab] = useState(true);
+    const [isLoginTab, setIsLoginTab] = useState(initialTab === 'login');
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setIsLoginTab(initialTab === 'login');
+            setErrorMsg('');
+        }
+    }, [isOpen, initialTab]);
 
     // Sign In Fields
     const [loginId, setLoginId] = useState('');
@@ -44,7 +51,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
             const result = await login(loginId, loginPassword);
             if (result.success) {
                 onClose();
-                navigate('/dashboard');
+                navigate(redirectPath);
             } else {
                 setErrorMsg(result.error || 'Failed to sign in. Please check your credentials.');
             }
@@ -75,7 +82,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
             );
             if (result.success) {
                 onClose();
-                navigate('/dashboard');
+                navigate(redirectPath);
             } else {
                 setErrorMsg(result.error || 'Registration failed. Try a different username/email.');
             }

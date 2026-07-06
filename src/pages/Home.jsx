@@ -16,6 +16,12 @@ const Home = () => {
     const { isConnected } = useWallet();
     const navigate = useNavigate();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authModalConfig, setAuthModalConfig] = useState({ initialTab: 'register', redirectPath: '/submit' });
+
+    const openAuthModal = (initialTab = 'register', redirectPath = '/submit') => {
+        setAuthModalConfig({ initialTab, redirectPath });
+        setIsAuthModalOpen(true);
+    };
     const [categories, setCategories] = useState([]);
     const [featuredWebsites, setFeaturedWebsites] = useState([]);
     const [scamWebsites, setScamWebsites] = useState([]);
@@ -136,7 +142,7 @@ const Home = () => {
                                             if (isConnected) {
                                                 navigate('/submit');
                                             } else {
-                                                setIsAuthModalOpen(true);
+                                                openAuthModal('register', '/submit');
                                             }
                                         }}
                                         className="h-14 px-8 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
@@ -283,7 +289,7 @@ const Home = () => {
                                         if (isConnected) {
                                             navigate('/submit');
                                         } else {
-                                            setIsAuthModalOpen(true);
+                                            openAuthModal('register', '/submit');
                                         }
                                     }}
                                     className="h-16 px-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-2xl text-base font-black flex items-center justify-center gap-2 transition-all shadow-xl hover:shadow-indigo-500/25 hover:-translate-y-0.5 w-full sm:w-auto active:scale-95 animate-pulse-slow"
@@ -320,24 +326,38 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                            {categories.filter(cat => cat.featured).map((category, index) => {
-                                const gradient = getGradient(index);
-                                return (
-                                    <Link key={category._id || category.slug} to={`/category/${category.slug}`} className="group">
-                                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/60 h-full relative overflow-hidden hover:bg-white/90">
-                                            {/* Decorative gradient corner */}
-                                            <div className={`absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full -mr-10 -mt-10 transition-opacity group-hover:opacity-20`}></div>
+                            {categories
+                                .filter(cat => cat.featured)
+                                .sort((a, b) => {
+                                    if (a.slug === 'mlm') return -1;
+                                    if (b.slug === 'mlm') return 1;
+                                    return 0;
+                                })
+                                .map((category, index) => {
+                                    const gradient = getGradient(index);
+                                    return (
+                                        <Link key={category._id || category.slug} to={`/category/${category.slug}`} className="group">
+                                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/60 h-full relative overflow-hidden hover:bg-white/90">
+                                                {/* Decorative gradient corner */}
+                                                <div className={`absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full -mr-10 -mt-10 transition-opacity group-hover:opacity-20`}></div>
 
-                                            {/* Subtle shine effect on hover */}
-                                            <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                                {/* Subtle shine effect on hover */}
+                                                <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                                            <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 sm:mb-6 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative z-10`}>
-                                                <img 
-                                                    src={`https://www.google.com/s2/favicons?domain=${category.brandDomain}&sz=128`}
-                                                    alt={category.name}
-                                                    className="w-7 h-7 sm:w-9 sm:h-9 object-contain bg-white rounded-lg p-1 shadow-sm"
-                                                />
-                                            </div>
+                                                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 sm:mb-6 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative z-10`}>
+                                                    {category.icon && LucideIcons[category.icon] ? (
+                                                        (() => {
+                                                            const IconComponent = LucideIcons[category.icon];
+                                                            return <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-white" />;
+                                                        })()
+                                                    ) : (
+                                                        <img 
+                                                            src={`https://www.google.com/s2/favicons?domain=${category.brandDomain}&sz=128`}
+                                                            alt={category.name}
+                                                            className="w-7 h-7 sm:w-9 sm:h-9 object-contain bg-white rounded-lg p-1 shadow-sm"
+                                                        />
+                                                    )}
+                                                </div>
 
                                             <h3 className="text-lg sm:text-xl font-bold text-text-main mb-2 group-hover:text-primary transition-colors relative z-10">{category.name}</h3>
                                             <p className="text-sm sm:text-base text-text-muted font-medium mb-4 sm:mb-6 relative z-10">{category.websiteCount} Verified Apps</p>
@@ -666,7 +686,12 @@ const Home = () => {
                     </div>
                 </section>
             </div>
-            <WalletConnectionModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            <WalletConnectionModal
+                isOpen={isAuthModalOpen}
+                onClose={() => setIsAuthModalOpen(false)}
+                initialTab={authModalConfig.initialTab}
+                redirectPath={authModalConfig.redirectPath}
+            />
         </PageLayout>
     );
 };

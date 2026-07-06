@@ -59,6 +59,15 @@ const WebsiteDetail = () => {
                 setWebsite(site);
                 setLoading(false);
                 if (site) {
+                    try {
+                        const visited = JSON.parse(localStorage.getItem('cs_visited_sites') || '[]');
+                        if (!visited.includes(site.slug)) {
+                            visited.push(site.slug);
+                            localStorage.setItem('cs_visited_sites', JSON.stringify(visited));
+                        }
+                    } catch (e) {
+                        console.error('Visited storage error:', e);
+                    }
                     getWebsites({ category: site.category }).then(similar => {
                         setSimilarWebsites(similar.filter(w => w.id !== site.id).slice(0, 3));
                     }).catch(err => console.error("Error loading similar websites:", err));
