@@ -130,7 +130,7 @@ const SubmitWebsite = () => {
                                     animate={{ y: 0, opacity: 1 }}
                                     className="inline-block"
                                 >
-                                    <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600 mb-4 leading-tight">
+                                    <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600 mb-4 leading-tight">
                                         Get Your Crypto Website Listed
                                     </h1>
                                 </motion.div>
