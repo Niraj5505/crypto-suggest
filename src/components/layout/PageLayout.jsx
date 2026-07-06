@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import WelcomePromoModal from '../common/WelcomePromoModal';
 
 const PageLayout = ({ children }) => {
     React.useEffect(() => {
@@ -19,6 +20,7 @@ const PageLayout = ({ children }) => {
     return (
         <div className="min-h-screen flex flex-col">
             <Header />
+            <WelcomePromoModal />
             <main className="flex-1">
                 {children}
             </main>

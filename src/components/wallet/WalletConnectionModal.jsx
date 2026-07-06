@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Mail, Phone, User, Lock, Sparkles, AlertCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Mail, Phone, User, Lock, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 
@@ -10,6 +11,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
     const [isLoginTab, setIsLoginTab] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     // Sign In Fields
     const [loginId, setLoginId] = useState('');
@@ -80,8 +82,8 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -165,7 +167,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                                         value={loginId}
                                         onChange={(e) => setLoginId(e.target.value)}
                                         placeholder="e.g. satoshi / admin@site.com"
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
                                         disabled={isLoading}
                                         required
                                     />
@@ -177,14 +179,21 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                                 <div className="relative">
                                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         value={loginPassword}
                                         onChange={(e) => setLoginPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
                                         disabled={isLoading}
                                         required
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-150 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
                                 </div>
                             </div>
 
@@ -256,14 +265,21 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                                 <div className="relative">
                                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         value={signUpPassword}
                                         onChange={(e) => setSignUpPassword(e.target.value)}
                                         placeholder="Min 6 characters"
-                                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
+                                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50"
                                         disabled={isLoading}
                                         required
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-150 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
                                 </div>
                             </div>
 
