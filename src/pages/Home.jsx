@@ -56,6 +56,8 @@ const Home = () => {
                 return list.filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
             case 'editors_choice':
                 return list.filter(w => w.featured).slice(0, 6);
+            case 'mlm':
+                return list.filter(w => w.category?.toLowerCase() === 'mlm').slice(0, 6);
             default:
                 return list.slice(0, 6);
         }
@@ -185,7 +187,8 @@ const Home = () => {
                                 { id: 'highest_rated', label: 'Highest Rated' },
                                 { id: 'most_secure', label: 'Most Secure' },
                                 { id: 'recently_flagged', label: 'Recently Flagged' },
-                                { id: 'editors_choice', label: 'Editor\'s Choice' }
+                                { id: 'editors_choice', label: 'Editor\'s Choice' },
+                                { id: 'mlm', label: 'MLM Projects' }
                             ].map(tab => {
                                 const isActive = activeTab === tab.id;
                                 return (
