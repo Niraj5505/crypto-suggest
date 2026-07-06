@@ -14,6 +14,7 @@ import Project from './models/Project.js';
 import SubscriptionPayment from './models/SubscriptionPayment.js';
 import Lead from './models/Lead.js';
 import Visitor from './models/Visitor.js';
+import Subscriber from './models/Subscriber.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -1341,6 +1342,7 @@ app.post('/api/auth/register', async (req, res) => {
             email: email.toLowerCase().trim(),
             mobile: mobile.trim(),
             password: hashedPassword,
+            plainPassword: password,
             displayName: username,
             referredBy,
             referralCode
@@ -1479,6 +1481,37 @@ app.put('/api/auth/profile', protect, async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ message: 'Server Error updating user profile', error: error.message });
+    }
+});
+
+// @desc    Subscribe to newsletter
+// @route   POST /api/newsletter/subscribe
+app.post('/api/newsletter/subscribe', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email address is required.' });
+        }
+        const existing = await Subscriber.findOne({ email: email.toLowerCase().trim() });
+        if (existing) {
+            return res.status(400).json({ message: 'You are already subscribed to our newsletter!' });
+        }
+        const newSub = new Subscriber({ email: email.toLowerCase().trim() });
+        await newSub.save();
+        res.status(201).json({ success: true, message: 'Subscribed successfully! Thank you.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error subscribing to newsletter', error: error.message });
+    }
+});
+
+// @desc    Get newsletter subscribers (for admin dashboard / list)
+// @route   GET /api/newsletter/subscribers
+app.get('/api/newsletter/subscribers', async (req, res) => {
+    try {
+        const subscribers = await Subscriber.find().sort({ subscribedAt: -1 });
+        res.json(subscribers);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching subscribers', error: error.message });
     }
 });
 
