@@ -25,9 +25,6 @@ const Footer = () => {
                             Your trusted directory for discovering verified crypto websites. We manually verify listings, publish scam alerts, and protect investors.
                         </p>
                         <div className="pt-2 text-xs text-gray-400 space-y-1 font-medium">
-                            <p className="font-bold text-gray-300">Crypto Suggest LLC</p>
-                            <p>Reg No: US-LLC-2026-CS99</p>
-                            <p>Silicon Valley, CA, USA</p>
                             <p className="pt-1">Email: contact@cryptosuggest.live</p>
                         </div>
                     </div>
