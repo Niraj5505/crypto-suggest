@@ -24,8 +24,11 @@ const Footer = () => {
                         <p className="text-gray-300 text-sm leading-relaxed">
                             Your trusted directory for discovering verified crypto websites. We manually verify listings, publish scam alerts, and protect investors.
                         </p>
-                        <div className="pt-2">
-                            <p className="text-xs text-gray-400 font-medium">Email: contact@cryptosuggest.live</p>
+                        <div className="pt-2 text-xs text-gray-400 space-y-1 font-medium">
+                            <p className="font-bold text-gray-300">Crypto Suggest LLC</p>
+                            <p>Reg No: US-LLC-2026-CS99</p>
+                            <p>Silicon Valley, CA, USA</p>
+                            <p className="pt-1">Email: contact@cryptosuggest.live</p>
                         </div>
                     </div>
 
@@ -66,7 +69,7 @@ const Footer = () => {
                             </li>
                             <li>
                                 <Link to="/about" className="text-white/70 hover:text-accent text-sm transition-colors flex items-center gap-2 py-0.5">
-                                    <Info className="w-4 h-4 opacity-70" /> About Founder
+                                    <Info className="w-4 h-4 opacity-70" /> About Us
                                 </Link>
                             </li>
                             <li>

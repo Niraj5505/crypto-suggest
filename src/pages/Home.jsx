@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { Search, Shield, TrendingUp, Users, ArrowRight, Check, Star, Zap, Globe, Lock, AlertTriangle } from 'lucide-react';
 import PageLayout from '../components/layout/PageLayout';
@@ -9,8 +9,13 @@ import Badge from '../components/common/Badge';
 import WebsiteCard from '../components/website/WebsiteCard';
 import { mockTestimonials } from '../data/mockData';
 import { getCategories, getWebsites } from '../services/api';
+import { useWallet } from '../contexts/WalletContext';
+import WalletConnectionModal from '../components/wallet/WalletConnectionModal';
 
 const Home = () => {
+    const { isConnected } = useWallet();
+    const navigate = useNavigate();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
     const [featuredWebsites, setFeaturedWebsites] = useState([]);
     const [scamWebsites, setScamWebsites] = useState([]);
@@ -45,7 +50,7 @@ const Home = () => {
         let list = [...allWebsites];
         switch (activeTab) {
             case 'trending':
-                return list.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+                return list.filter(w => w.category?.toLowerCase() === 'mlm').sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
             case 'new':
                 return list.sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
             case 'highest_rated':
@@ -126,12 +131,18 @@ const Home = () => {
                                     >
                                         Explore Projects <ArrowRight className="w-5 h-5" />
                                     </Link>
-                                    <Link 
-                                        to="/submit"
+                                    <button 
+                                        onClick={() => {
+                                            if (isConnected) {
+                                                navigate('/submit');
+                                            } else {
+                                                setIsAuthModalOpen(true);
+                                            }
+                                        }}
                                         className="h-14 px-8 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
                                     >
                                         List Your Project Free
-                                    </Link>
+                                    </button>
                                 </div>
 
                                 {/* Trust Metrics Checklist */}
@@ -267,12 +278,18 @@ const Home = () => {
                                 </div>
 
                                 {/* CTA Button */}
-                                <Link 
-                                    to="/submit"
+                                <button 
+                                    onClick={() => {
+                                        if (isConnected) {
+                                            navigate('/submit');
+                                        } else {
+                                            setIsAuthModalOpen(true);
+                                        }
+                                    }}
                                     className="h-16 px-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-2xl text-base font-black flex items-center justify-center gap-2 transition-all shadow-xl hover:shadow-indigo-500/25 hover:-translate-y-0.5 w-full sm:w-auto active:scale-95 animate-pulse-slow"
                                 >
                                     Claim Free Listing →
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -479,32 +496,32 @@ const Home = () => {
                 </section>
 
                 {/* Live Statistics Section */}
-                <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-slate-950 to-slate-950 z-0" />
+                <section className="py-16 bg-slate-50 text-text-main relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl" />
                     
                     <div className="container-custom relative z-10">
                         <div className="text-center mb-12">
-                            <span className="text-accent font-bold tracking-wider uppercase text-xs sm:text-sm mb-2 block">Real-Time Data</span>
-                            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Live Platform Statistics</h2>
-                            <p className="text-gray-400 max-w-xl mx-auto font-medium">Verify our track record and community activity with live performance indicators.</p>
+                            <span className="text-primary font-bold tracking-wider uppercase text-xs sm:text-sm mb-2 block">Real-Time Data</span>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Live Platform Statistics</h2>
+                            <p className="text-text-muted max-w-xl mx-auto font-medium">Verify our track record and community activity with live performance indicators.</p>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8">
                             {[
-                                { label: 'Projects Listed', count: 342, color: 'text-blue-400' },
-                                { label: 'Users Online', count: 167, color: 'text-emerald-400', live: true },
-                                { label: 'Projects Verified Today', count: 9, color: 'text-indigo-400' },
-                                { label: 'Scam Reports', count: 118, color: 'text-red-400' },
-                                { label: 'Countries Covered', count: 42, color: 'text-amber-400' }
+                                { label: 'Projects Listed', count: 342, color: 'text-blue-600' },
+                                { label: 'Users Online', count: 167, color: 'text-emerald-600', live: true },
+                                { label: 'Projects Verified Today', count: 9, color: 'text-indigo-600' },
+                                { label: 'Scam Reports', count: 118, color: 'text-red-600' },
+                                { label: 'Countries Covered', count: 42, color: 'text-amber-600' }
                             ].map((stat, idx) => (
-                                <div key={idx} className={`bg-white/5 border border-white/10 rounded-2xl p-6 text-center shadow-lg backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition-colors`}>
+                                <div key={idx} className={`bg-white border border-gray-250 rounded-2xl p-6 text-center shadow-md relative overflow-hidden group hover:border-primary/30 transition-colors`}>
                                     {stat.live && (
                                         <span className="absolute top-3 right-3 flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                         </span>
                                     )}
-                                    <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-2">{stat.label}</p>
+                                    <p className="text-xs sm:text-sm text-text-muted font-bold uppercase tracking-wider mb-2">{stat.label}</p>
                                     <p className={`text-3xl sm:text-4xl font-black ${stat.color} font-mono`}>{stat.count}</p>
                                 </div>
                             ))}
@@ -649,6 +666,7 @@ const Home = () => {
                     </div>
                 </section>
             </div>
+            <WalletConnectionModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
         </PageLayout>
     );
 };

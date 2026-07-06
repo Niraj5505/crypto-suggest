@@ -25,6 +25,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
     const [signUpReferrer, setSignUpReferrer] = useState('');
 
     if (!isOpen) return null;
+    if (typeof document === 'undefined' || !document.body) return null;
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();

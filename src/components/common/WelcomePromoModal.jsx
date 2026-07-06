@@ -31,6 +31,7 @@ const WelcomePromoModal = () => {
     }, [isConnected]);
 
     if (!isOpen || isConnected) return null;
+    if (typeof document === 'undefined' || !document.body) return null;
 
     const handleClose = () => {
         localStorage.setItem('hasSeenPromo', 'true');

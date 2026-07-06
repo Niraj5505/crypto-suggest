@@ -19,6 +19,9 @@ import ScrollToTop from './components/common/ScrollToTop';
 import Admin from './pages/Admin';
 import Rankings from './pages/Rankings';
 import Dashboard from './pages/Dashboard';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
+import Disclaimer from './pages/Disclaimer';
 
 const ReferralHandler = () => {
     const location = useLocation();
@@ -55,6 +58,9 @@ function App() {
                                     <Route path="/admin" element={<Admin />} />
                                     <Route path="/rankings" element={<Rankings />} />
                                     <Route path="/dashboard" element={<Dashboard />} />
+                                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                                    <Route path="/terms" element={<TermsConditions />} />
+                                    <Route path="/disclaimer" element={<Disclaimer />} />
                                     <Route path="*" element={<NotFound />} />
                                 </Routes>
                             <CompareBar />
