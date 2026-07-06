@@ -23,9 +23,13 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
     const [signUpMobile, setSignUpMobile] = useState('');
     const [signUpPassword, setSignUpPassword] = useState('');
     const [signUpReferrer, setSignUpReferrer] = useState('');
+    const [mounted, setMounted] = useState(false);
 
-    if (!isOpen) return null;
-    if (typeof document === 'undefined' || !document.body) return null;
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted || !isOpen) return null;
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
@@ -321,7 +325,8 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                     </p>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
