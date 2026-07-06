@@ -139,26 +139,7 @@ const SubmitWebsite = () => {
                                 </p>
                             </div>
 
-                            <div className="grid md:grid-cols-4 gap-6 mb-12">
-                                {benefits.map((benefit, index) => (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                    >
-                                        <Card className="text-center h-full hover:shadow-lg transition-all border-t-4 border-t-transparent hover:border-t-primary">
-                                            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                                {benefit.icon}
-                                            </div>
-                                            <h3 className="font-bold mb-2">{benefit.title}</h3>
-                                            <p className="text-sm text-text-muted">{benefit.description}</p>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
-
-                            <Card className="overflow-hidden shadow-2xl border-0 ring-1 ring-gray-100">
+                            <Card className="overflow-hidden shadow-2xl border-0 ring-1 ring-gray-100 mb-16">
                                 <div className="mb-10 bg-gray-50/50 p-6 -mx-6 -mt-6 border-b border-gray-100">
                                     <div className="flex justify-between items-center relative">
                                         {/* Progress Bar Background */}
@@ -345,6 +326,26 @@ const SubmitWebsite = () => {
                                     </AnimatePresence>
                                 </form>
                             </Card>
+
+                            {/* Benefits down after form */}
+                            <div className="grid md:grid-cols-4 gap-6 mb-12">
+                                {benefits.map((benefit, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                    >
+                                        <Card className="text-center h-full hover:shadow-lg transition-all border-t-4 border-t-transparent hover:border-t-primary">
+                                            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                {benefit.icon}
+                                            </div>
+                                            <h3 className="font-bold mb-2">{benefit.title}</h3>
+                                            <p className="text-sm text-text-muted">{benefit.description}</p>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </div>
                         </>
                     )}
                 </div>
