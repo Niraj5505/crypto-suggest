@@ -156,7 +156,7 @@ const Home = () => {
                             </div>
 
                             {/* Right Side: 3D Visual */}
-                            <div className="relative flex items-center justify-center lg:p-8 xl:p-10 h-full">
+                            <div className="relative hidden lg:flex items-center justify-center lg:p-8 xl:p-10 h-full">
                                 <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[600px] xl:max-w-[650px] animate-float-slow drop-shadow-2xl">
                                     <img
                                         src="/hero-home.png"
