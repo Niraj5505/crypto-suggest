@@ -15,6 +15,7 @@ const Home = () => {
     const [featuredWebsites, setFeaturedWebsites] = useState([]);
     const [scamWebsites, setScamWebsites] = useState([]);
     const [allWebsites, setAllWebsites] = useState([]);
+    const [activeTab, setActiveTab] = useState('trending');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -39,12 +40,27 @@ const Home = () => {
         fetchHomeData();
     }, []);
 
-    const getTrending = () => [...allWebsites].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
-    const getNewListings = () => [...allWebsites].sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 3);
-    const getHighestRated = () => [...allWebsites].sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 3);
-    const getMostSecure = () => [...allWebsites].filter(w => w.verified && !w.hasScamAlert).sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 3);
-    const getRecentlyFlagged = () => [...allWebsites].filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 3);
-    const getEditorsChoice = () => [...allWebsites].filter(w => w.featured).slice(0, 3);
+    const getFilteredWebsites = () => {
+        if (!allWebsites || allWebsites.length === 0) return [];
+        let list = [...allWebsites];
+        switch (activeTab) {
+            case 'trending':
+                return list.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+            case 'new':
+                return list.sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
+            case 'highest_rated':
+                return list.sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
+            case 'most_secure':
+                return list.filter(w => w.verified && !w.hasScamAlert).sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
+            case 'recently_flagged':
+                return list.filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
+            case 'editors_choice':
+                return list.filter(w => w.featured).slice(0, 6);
+            default:
+                return list.slice(0, 6);
+        }
+    };
+
 
     const trustFactors = [
         { icon: Shield, title: 'Manual Verification', description: 'Every website is manually reviewed before listing', color: 'bg-blue-100 text-blue-600' },
@@ -151,7 +167,7 @@ const Home = () => {
                 {/* Featured Websites - White BG */}
                 <section className="py-24 bg-white">
                     <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6">
                             <div className="text-center md:text-left">
                                 <h2 className="text-4xl font-bold text-text-main mb-2">Featured Websites</h2>
                                 <p className="text-xl text-text-muted">Handpicked verified crypto platforms for you</p>
@@ -161,177 +177,48 @@ const Home = () => {
                             </Link>
                         </div>
 
+                        {/* Clean Text-based Tab Menu with Underline */}
+                        <div className="flex items-center gap-6 sm:gap-8 border-b border-gray-150 mb-10 overflow-x-auto scrollbar-none pb-0.5">
+                            {[
+                                { id: 'trending', label: 'Trending Today' },
+                                { id: 'new', label: 'New Listings' },
+                                { id: 'highest_rated', label: 'Highest Rated' },
+                                { id: 'most_secure', label: 'Most Secure' },
+                                { id: 'recently_flagged', label: 'Recently Flagged' },
+                                { id: 'editors_choice', label: 'Editor\'s Choice' }
+                            ].map(tab => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`pb-4 text-sm sm:text-base font-bold transition-all relative whitespace-nowrap ${
+                                            isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-800'
+                                        }`}
+                                    >
+                                        <span>{tab.label}</span>
+                                        {isActive && (
+                                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full animate-fade-in"></div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {featuredWebsites.map(website => (
-                                <WebsiteCard key={website.id} website={website} viewMode="grid" />
+                            {getFilteredWebsites().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
                             ))}
+                            {getFilteredWebsites().length === 0 && (
+                                <div className="col-span-full py-16 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-8">
+                                    <p className="text-gray-400 font-semibold text-base">No projects match this filter right now.</p>
+                                </div>
+                            )}
                         </div>
 
                         <Link to="/browse" className="md:hidden mt-8 block">
                             <Button variant="outline" className="w-full">View All</Button>
                         </Link>
-                    </div>
-                </section>
-
-                {/* 1. Trending Today */}
-                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>🔥</span> Trending Today
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Most visited projects by the community today</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getTrending().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getTrending().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No trending projects today.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 2. New Listings */}
-                <section className="py-16 bg-white border-t border-slate-100">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>🚀</span> New Listings
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Recently added crypto projects</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getNewListings().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getNewListings().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No new listings found.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 3. Highest Rated */}
-                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>⭐</span> Highest Rated
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Projects with top trust ratings</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getHighestRated().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getHighestRated().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No highest rated projects found.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 4. Most Secure */}
-                <section className="py-16 bg-white border-t border-slate-100">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>🛡️</span> Most Secure
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Verified platforms with no active alerts</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getMostSecure().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getMostSecure().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No secure projects listed.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 5. Recently Flagged */}
-                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>⚠️</span> Recently Flagged
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Recent scam reports and warnings</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getRecentlyFlagged().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getRecentlyFlagged().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No recently flagged projects.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* 6. Editor's Choice */}
-                <section className="py-16 bg-white border-t border-b border-slate-100">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
-                            <div>
-                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span>👑</span> Editor's Choice
-                                </h3>
-                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Handpicked featured platforms</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" size="sm">View All</Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getEditorsChoice().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getEditorsChoice().length === 0 && (
-                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
-                                    <p className="text-gray-400 font-semibold text-sm">No featured editor's choice platforms.</p>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </section>
 
