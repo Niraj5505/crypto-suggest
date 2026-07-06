@@ -11,6 +11,9 @@ import { mockTestimonials } from '../data/mockData';
 import { getCategories, getWebsites } from '../services/api';
 
 const Home = () => {
+    const [categories, setCategories] = useState([]);
+    const [featuredWebsites, setFeaturedWebsites] = useState([]);
+    const [scamWebsites, setScamWebsites] = useState([]);
     const [allWebsites, setAllWebsites] = useState([]);
     const [loading, setLoading] = useState(true);
 
