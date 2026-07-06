@@ -8,7 +8,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import WebsiteCard from '../components/website/WebsiteCard';
 import { mockTestimonials } from '../data/mockData';
-import { getCategories, getWebsites } from '../services/api';
+import { getCategories, getWebsites, subscribeNewsletter } from '../services/api';
 import { useWallet } from '../contexts/WalletContext';
 import WalletConnectionModal from '../components/wallet/WalletConnectionModal';
 
@@ -28,6 +28,28 @@ const Home = () => {
     const [allWebsites, setAllWebsites] = useState([]);
     const [activeTab, setActiveTab] = useState('trending');
     const [loading, setLoading] = useState(true);
+
+    const [newsletterEmail, setNewsletterEmail] = useState('');
+    const [newsletterLoading, setNewsletterLoading] = useState(false);
+    const [newsletterMsg, setNewsletterMsg] = useState('');
+    const [newsletterError, setNewsletterError] = useState('');
+
+    const handleNewsletterSubmit = async (e) => {
+        e.preventDefault();
+        if (!newsletterEmail) return;
+        setNewsletterLoading(true);
+        setNewsletterMsg('');
+        setNewsletterError('');
+        try {
+            const res = await subscribeNewsletter(newsletterEmail);
+            setNewsletterMsg(res.message || 'Subscribed successfully!');
+            setNewsletterEmail('');
+        } catch (err) {
+            setNewsletterError(err.message || 'Failed to subscribe.');
+        } finally {
+            setNewsletterLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchHomeData = async () => {
@@ -226,10 +248,32 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getFilteredWebsites().map(website => (
-                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
-                            ))}
-                            {getFilteredWebsites().length === 0 && (
+                            {loading ? (
+                                /* Skeleton Loaders */
+                                Array.from({ length: 6 }).map((_, i) => (
+                                    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm animate-pulse">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+                                            <div className="space-y-2 flex-1">
+                                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 mb-4">
+                                            <div className="h-3 bg-gray-100 rounded w-full"></div>
+                                            <div className="h-3 bg-gray-100 rounded w-5/6"></div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="h-6 bg-gray-100 rounded-full w-16"></div>
+                                            <div className="h-6 bg-gray-100 rounded-full w-20"></div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : getFilteredWebsites().length > 0 ? (
+                                getFilteredWebsites().map(website => (
+                                    <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                                ))
+                            ) : (
                                 <div className="col-span-full py-16 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-8">
                                     <p className="text-gray-400 font-semibold text-base">No projects match this filter right now.</p>
                                 </div>
@@ -596,19 +640,37 @@ const Home = () => {
                             <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-2xl mx-auto">
                                 Get verified listings, security alerts, and crypto insights delivered straight to your inbox.
                             </p>
-
-                            <div className="max-w-lg mx-auto bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/20 mb-10">
+                            <form onSubmit={handleNewsletterSubmit} className="max-w-lg mx-auto bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/20 mb-6">
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <input
                                         type="email"
+                                        required
+                                        value={newsletterEmail}
+                                        onChange={e => setNewsletterEmail(e.target.value)}
+                                        disabled={newsletterLoading}
                                         placeholder="Enter your email address"
                                         className="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/10 text-white placeholder-blue-200 focus:outline-none focus:bg-white/20 focus:border-white/30 transition-all font-medium"
                                     />
-                                    <button className="px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg">
-                                        Subscribe
+                                    <button 
+                                        type="submit"
+                                        disabled={newsletterLoading}
+                                        className="px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg flex items-center justify-center min-w-[120px]"
+                                    >
+                                        {newsletterLoading ? (
+                                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            'Subscribe'
+                                        )}
                                     </button>
                                 </div>
-                            </div>
+                            </form>
+
+                            {newsletterMsg && (
+                                <p className="text-emerald-400 font-bold text-sm mb-10 animate-fade-in">{newsletterMsg}</p>
+                            )}
+                            {newsletterError && (
+                                <p className="text-red-400 font-bold text-sm mb-10 animate-fade-in">{newsletterError}</p>
+                            )}
 
                             <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-blue-200 font-medium">
                                 <div className="flex items-center gap-2"><Check className="w-5 h-5 text-green-400" /> No Spam, ever</div>
