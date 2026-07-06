@@ -25,7 +25,6 @@ const Footer = () => {
                             Your trusted directory for discovering verified crypto websites. We manually verify listings, publish scam alerts, and protect investors.
                         </p>
                         <div className="pt-2">
-                            <p className="text-xs text-gray-400 font-medium">Founder: Niraj Thanki</p>
                             <p className="text-xs text-gray-400 font-medium">Email: contact@cryptosuggest.live</p>
                         </div>
                     </div>
