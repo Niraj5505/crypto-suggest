@@ -115,35 +115,20 @@ const Home = () => {
                                     Compare exchanges, wallets, DeFi, AI and Web3 projects with scam analysis, community ratings and expert reviews.
                                 </p>
 
-                                {/* Search Bar - Left Aligned */}
-                                <div className="w-full max-w-lg mt-6 sm:mt-8 animate-fade-in-up delay-300">
-                                    <div className="relative group">
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-30 transition"></div>
-                                        <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 p-1.5 sm:p-2 flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
-                                            <div className="flex items-center flex-1 min-w-0">
-                                                <Search className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 ml-3 sm:ml-4 flex-shrink-0" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Search protocols..."
-                                                    className="w-full h-12 sm:h-14 pl-3 sm:pl-4 pr-3 sm:pr-4 rounded-lg sm:rounded-xl text-base sm:text-lg text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent font-medium"
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            window.location.href = `/browse?search=${encodeURIComponent(e.target.value)}`;
-                                                        }
-                                                    }}
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousElementSibling.querySelector('input');
-                                                    window.location.href = `/browse?search=${encodeURIComponent(input.value)}`;
-                                                }}
-                                                className="min-h-[48px] sm:h-12 px-6 sm:px-8 bg-gray-900 text-white font-bold rounded-lg sm:rounded-xl hover:bg-black transition-colors shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base"
-                                            >
-                                                Explore <ArrowRight className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
+                                {/* Hero Actions Buttons - Left Aligned */}
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mt-6 sm:mt-8 animate-fade-in-up delay-300">
+                                    <Link 
+                                        to="/browse"
+                                        className="h-14 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-xl hover:shadow-indigo-500/25 hover:-translate-y-0.5 active:scale-95"
+                                    >
+                                        Explore Projects <ArrowRight className="w-5 h-5" />
+                                    </Link>
+                                    <Link 
+                                        to="/submit"
+                                        className="h-14 px-8 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
+                                    >
+                                        List Your Project Free
+                                    </Link>
                                 </div>
 
                                 {/* Trust Metrics Checklist */}
