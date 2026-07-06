@@ -58,7 +58,7 @@ const Home = () => {
         <PageLayout>
             <div className="overflow-hidden">
                 {/* Hero Section - Split Screen Modern Layout */}
-                <section className="relative min-h-screen flex items-center pt-32 pb-20 sm:pt-36 sm:pb-24 lg:pt-40 lg:pb-32 overflow-hidden bg-[#FAFBFF]">
+                <section className="relative min-h-0 lg:min-h-screen flex items-center pt-32 pb-12 sm:pt-36 sm:pb-16 lg:pt-40 lg:pb-32 overflow-hidden bg-[#FAFBFF]">
                     {/* Background Elements */}
                     <div className="absolute top-0 right-0 w-full sm:w-[60%] h-full bg-gradient-to-l from-blue-50/80 via-purple-50/50 to-transparent z-0"></div>
                     <div className="absolute -top-24 -right-24 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl opacity-60 animate-pulse-slow"></div>
