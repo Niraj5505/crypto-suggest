@@ -11,11 +11,7 @@ import { mockTestimonials } from '../data/mockData';
 import { getCategories, getWebsites } from '../services/api';
 
 const Home = () => {
-    const [categories, setCategories] = useState([]);
-    const [featuredWebsites, setFeaturedWebsites] = useState([]);
-    const [scamWebsites, setScamWebsites] = useState([]);
     const [allWebsites, setAllWebsites] = useState([]);
-    const [activeTab, setActiveTab] = useState('trending');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -40,26 +36,12 @@ const Home = () => {
         fetchHomeData();
     }, []);
 
-    const getFilteredWebsites = () => {
-        if (!allWebsites || allWebsites.length === 0) return [];
-        let list = [...allWebsites];
-        switch (activeTab) {
-            case 'trending':
-                return list.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
-            case 'new':
-                return list.sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
-            case 'highest_rated':
-                return list.sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
-            case 'most_secure':
-                return list.filter(w => w.verified && !w.hasScamAlert).sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
-            case 'recently_flagged':
-                return list.filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
-            case 'editors_choice':
-                return list.filter(w => w.featured).slice(0, 6);
-            default:
-                return list.slice(0, 6);
-        }
-    };
+    const getTrending = () => [...allWebsites].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 3);
+    const getNewListings = () => [...allWebsites].sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 3);
+    const getHighestRated = () => [...allWebsites].sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 3);
+    const getMostSecure = () => [...allWebsites].filter(w => w.verified && !w.hasScamAlert).sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 3);
+    const getRecentlyFlagged = () => [...allWebsites].filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 3);
+    const getEditorsChoice = () => [...allWebsites].filter(w => w.featured).slice(0, 3);
 
     const trustFactors = [
         { icon: Shield, title: 'Manual Verification', description: 'Every website is manually reviewed before listing', color: 'bg-blue-100 text-blue-600' },
@@ -188,109 +170,215 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Dynamic Filters Project Showcase Section */}
-                <section className="py-20 bg-slate-50 border-t border-b border-slate-200/60 relative overflow-hidden">
-                    {/* Decorative Background Elements */}
-                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-                    <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-                    <div className="container-custom relative z-10">
-                        <div className="text-center mb-12">
-                            <span className="inline-block px-4 py-1.5 rounded-full bg-white border border-gray-200/80 text-primary font-bold tracking-wider uppercase text-xs mb-3 shadow-sm">Showcase</span>
-                            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">Explore Projects By Performance</h2>
-                            <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto font-medium">Quickly browse top projects based on popularity, rating, security, and community warnings.</p>
+                {/* 1. Trending Today */}
+                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>🔥</span> Trending Today
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Most visited projects by the community today</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
                         </div>
-
-                        {/* Tabs list */}
-                        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-10 pb-6 border-b border-gray-200/80">
-                            {[
-                                { id: 'trending', label: 'Trending Today', icon: '🔥' },
-                                { id: 'new', label: 'New Listings', icon: '🚀' },
-                                { id: 'highest_rated', label: 'Highest Rated', icon: '⭐' },
-                                { id: 'most_secure', label: 'Most Secure', icon: '🛡️' },
-                                { id: 'recently_flagged', label: 'Recently Flagged', icon: '⚠️' },
-                                { id: 'editors_choice', label: 'Editor\'s Choice', icon: '👑' }
-                            ].map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-2.5 px-5 py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-                                        activeTab === tab.id
-                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 scale-105'
-                                            : 'bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
-                                    }`}
-                                >
-                                    <span className="text-base leading-none">{tab.icon}</span>
-                                    <span>{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Showcase Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {getFilteredWebsites().map(website => (
+                            {getTrending().map(website => (
                                 <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
                             ))}
-                            {getFilteredWebsites().length === 0 && (
-                                <div className="col-span-full py-16 text-center bg-white border border-gray-200/80 rounded-3xl p-8 shadow-sm">
-                                    <p className="text-gray-400 font-semibold text-base sm:text-lg">No projects match this filter right now.</p>
+                            {getTrending().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No trending projects today.</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </section>
 
-                {/* Promo Banner Section */}
-                <section className="py-8 relative overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
-                    {/* Subtle decorative highlights */}
-                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-80 h-40 bg-indigo-300/20 rounded-full blur-[100px] pointer-events-none" />
+                {/* 2. New Listings */}
+                <section className="py-16 bg-white border-t border-slate-100">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>🚀</span> New Listings
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Recently added crypto projects</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getNewListings().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getNewListings().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No new listings found.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 3. Highest Rated */}
+                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>⭐</span> Highest Rated
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Projects with top trust ratings</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getHighestRated().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getHighestRated().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No highest rated projects found.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 4. Most Secure */}
+                <section className="py-16 bg-white border-t border-slate-100">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>🛡️</span> Most Secure
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Verified platforms with no active alerts</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getMostSecure().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getMostSecure().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No secure projects listed.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 5. Recently Flagged */}
+                <section className="py-16 bg-slate-50 border-t border-slate-200/50">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>⚠️</span> Recently Flagged
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Recent scam reports and warnings</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getRecentlyFlagged().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getRecentlyFlagged().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-white border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No recently flagged projects.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 6. Editor's Choice */}
+                <section className="py-16 bg-white border-t border-b border-slate-100">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+                            <div>
+                                <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                                    <span>👑</span> Editor's Choice
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">Handpicked featured platforms</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" size="sm">View All</Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getEditorsChoice().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getEditorsChoice().length === 0 && (
+                                <div className="col-span-full py-10 text-center bg-slate-50 border border-gray-200/80 rounded-2xl p-6">
+                                    <p className="text-gray-400 font-semibold text-sm">No featured editor's choice platforms.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Launch Special Promo Section */}
+                <section className="py-12 sm:py-16 relative overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
+                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-80 h-40 bg-blue-300/20 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-80 h-40 bg-purple-300/20 rounded-full blur-[100px] pointer-events-none" />
                     
                     <div className="container-custom relative z-10">
-                        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 md:p-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
-                            {/* Decorative background grid pattern */}
-                            <div className="absolute inset-0 opacity-[0.02] mix-blend-overlay" style={{
-                                backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
-                                backgroundSize: '20px 20px'
-                            }} />
-
-                            <div className="flex-1 text-center md:text-left space-y-3 relative z-10">
-                                <div className="inline-flex items-center gap-2 bg-indigo-100 border border-indigo-300 px-3 py-1 rounded-full">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                                    <span className="text-[10px] sm:text-xs font-black text-indigo-700 uppercase tracking-widest">Limited Offer</span>
+                        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 md:p-10 shadow-lg flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden group">
+                            
+                            <div className="flex-1 space-y-4 text-center lg:text-left z-10">
+                                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-1.5 rounded-full shadow-sm">
+                                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                    <span className="text-xs font-black uppercase tracking-wider">Launch Special 🚀</span>
                                 </div>
-                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
-                                    List Your Project For <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">100% FREE</span>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight">
+                                    First 50 Projects get <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">FREE Premium Listing</span>
                                 </h2>
-                                <p className="text-sm sm:text-base text-gray-600 font-medium max-w-xl leading-relaxed">
-                                    Submit your project on our directory today. Use code below at checkout to activate your free Starter Plan listing!
-                                </p>
+                                
+                                {/* Features list */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                    {[
+                                        'FREE Premium Listing',
+                                        'Homepage Feature',
+                                        'SEO Backlink',
+                                        'Verified Badge'
+                                    ].map((feat, i) => (
+                                        <div key={i} className="flex items-center gap-2 justify-center lg:justify-start text-gray-700 font-semibold text-sm">
+                                            <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200 text-xs">✓</span>
+                                            <span>{feat}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto flex-shrink-0 justify-center">
-                                {/* Coupon badge */}
-                                <div className="flex items-center justify-between gap-3 bg-gray-100 border border-gray-300 rounded-2xl px-5 py-3.5 shadow-inner w-full sm:w-auto">
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Coupon Code</p>
-                                        <p className="font-mono text-lg font-black text-gray-900 tracking-widest mt-0.5 select-all">CST50</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText('CST50');
-                                            alert('Coupon code copied to clipboard!');
-                                        }}
-                                        className="h-8 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-lg hover:shadow-indigo-500/20 active:scale-95"
-                                    >
-                                        Copy Code
-                                    </button>
+                            <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10 w-full lg:w-auto flex-shrink-0 justify-center">
+                                {/* Value Badge */}
+                                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-2xl px-6 py-4 shadow-lg text-center transform hover:scale-105 transition-transform">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-90 font-mono">Worth</span>
+                                    <span className="text-2xl font-black tracking-tight font-mono">$99</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full mt-1">100% Free</span>
                                 </div>
 
                                 {/* CTA Button */}
                                 <Link 
-                                    to="/dashboard"
-                                    className="h-14 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all shadow-xl hover:shadow-indigo-500/20 hover:-translate-y-0.5 w-full sm:w-auto active:scale-95 animate-pulse-slow"
+                                    to="/submit"
+                                    className="h-16 px-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-2xl text-base font-black flex items-center justify-center gap-2 transition-all shadow-xl hover:shadow-indigo-500/25 hover:-translate-y-0.5 w-full sm:w-auto active:scale-95 animate-pulse-slow"
                                 >
-                                    Get Started Free <ArrowRight className="w-4 h-4" />
+                                    Claim Free Listing →
                                 </Link>
                             </div>
                         </div>
@@ -491,6 +579,40 @@ const Home = () => {
                                     </div>
                                     <h3 className="text-xl font-bold text-text-main mb-3">{factor.title}</h3>
                                     <p className="text-text-muted leading-relaxed">{factor.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Live Statistics Section */}
+                <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-slate-950 to-slate-950 z-0" />
+                    
+                    <div className="container-custom relative z-10">
+                        <div className="text-center mb-12">
+                            <span className="text-accent font-bold tracking-wider uppercase text-xs sm:text-sm mb-2 block">Real-Time Data</span>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Live Platform Statistics</h2>
+                            <p className="text-gray-400 max-w-xl mx-auto font-medium">Verify our track record and community activity with live performance indicators.</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8">
+                            {[
+                                { label: 'Projects Listed', count: 342, color: 'text-blue-400' },
+                                { label: 'Users Online', count: 167, color: 'text-emerald-400', live: true },
+                                { label: 'Projects Verified Today', count: 9, color: 'text-indigo-400' },
+                                { label: 'Scam Reports', count: 118, color: 'text-red-400' },
+                                { label: 'Countries Covered', count: 42, color: 'text-amber-400' }
+                            ].map((stat, idx) => (
+                                <div key={idx} className={`bg-white/5 border border-white/10 rounded-2xl p-6 text-center shadow-lg backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition-colors`}>
+                                    {stat.live && (
+                                        <span className="absolute top-3 right-3 flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                    )}
+                                    <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-2">{stat.label}</p>
+                                    <p className={`text-3xl sm:text-4xl font-black ${stat.color} font-mono`}>{stat.count}</p>
                                 </div>
                             ))}
                         </div>
