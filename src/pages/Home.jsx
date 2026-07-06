@@ -169,6 +169,32 @@ const Home = () => {
                     </div>
                 </section>
 
+
+                {/* Featured Websites - White BG */}
+                <section className="py-24 bg-white">
+                    <div className="container-custom">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+                            <div className="text-center md:text-left">
+                                <h2 className="text-4xl font-bold text-text-main mb-2">Featured Websites</h2>
+                                <p className="text-xl text-text-muted">Handpicked verified crypto platforms for you</p>
+                            </div>
+                            <Link to="/browse">
+                                <Button variant="outline" className="hidden md:flex">View All</Button>
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {featuredWebsites.map(website => (
+                                <WebsiteCard key={website.id} website={website} viewMode="grid" />
+                            ))}
+                        </div>
+
+                        <Link to="/browse" className="md:hidden mt-8 block">
+                            <Button variant="outline" className="w-full">View All</Button>
+                        </Link>
+                    </div>
+                </section>
+
                 {/* Promo Banner Section */}
                 <section className="py-8 relative overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
                     {/* Subtle decorative highlights */}
@@ -398,30 +424,6 @@ const Home = () => {
                 </section>
 
 
-                {/* Featured Websites - White BG */}
-                <section className="py-24 bg-white">
-                    <div className="container-custom">
-                        <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-4xl font-bold text-text-main mb-2">Featured Websites</h2>
-                                <p className="text-xl text-text-muted">Handpicked verified crypto platforms for you</p>
-                            </div>
-                            <Link to="/browse">
-                                <Button variant="outline" className="hidden md:flex">View All</Button>
-                            </Link>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {featuredWebsites.map(website => (
-                                <WebsiteCard key={website.id} website={website} viewMode="grid" />
-                            ))}
-                        </div>
-
-                        <Link to="/browse" className="md:hidden mt-8 block">
-                            <Button variant="outline" className="w-full">View All</Button>
-                        </Link>
-                    </div>
-                </section>
 
                 {/* Trust & Safety - Slate-50 BG */}
                 <section className="py-24 bg-slate-50 relative overflow-hidden">
