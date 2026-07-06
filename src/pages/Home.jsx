@@ -14,6 +14,8 @@ const Home = () => {
     const [categories, setCategories] = useState([]);
     const [featuredWebsites, setFeaturedWebsites] = useState([]);
     const [scamWebsites, setScamWebsites] = useState([]);
+    const [allWebsites, setAllWebsites] = useState([]);
+    const [activeTab, setActiveTab] = useState('trending');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,6 +28,7 @@ const Home = () => {
                 ]);
                 setCategories(cats);
                 setFeaturedWebsites(sites);
+                setAllWebsites(allSites || []);
                 const scams = allSites.filter(site => site.hasScamAlert);
                 setScamWebsites(scams);
             } catch (error) {
@@ -36,6 +39,27 @@ const Home = () => {
         };
         fetchHomeData();
     }, []);
+
+    const getFilteredWebsites = () => {
+        if (!allWebsites || allWebsites.length === 0) return [];
+        let list = [...allWebsites];
+        switch (activeTab) {
+            case 'trending':
+                return list.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+            case 'new':
+                return list.sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
+            case 'highest_rated':
+                return list.sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
+            case 'most_secure':
+                return list.filter(w => w.verified && !w.hasScamAlert).sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0)).slice(0, 6);
+            case 'recently_flagged':
+                return list.filter(w => w.hasScamAlert).sort((a, b) => new Date(b.createdAt || b.dateAdded) - new Date(a.createdAt || a.dateAdded)).slice(0, 6);
+            case 'editors_choice':
+                return list.filter(w => w.featured).slice(0, 6);
+            default:
+                return list.slice(0, 6);
+        }
+    };
 
     const trustFactors = [
         { icon: Shield, title: 'Manual Verification', description: 'Every website is manually reviewed before listing', color: 'bg-blue-100 text-blue-600' },
@@ -77,19 +101,18 @@ const Home = () => {
 
                                 {/* Main Headline */}
                                 <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 leading-[1.1] tracking-tight animate-fade-in-up delay-100">
-                                    Where
+                                    Discover
                                     <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
                                         Verified Crypto
                                     </span>
                                     <br />
-                                    Investors Meet Projects
+                                    Projects Before They Go Viral
                                 </h1>
 
                                 {/* Subheadline */}
                                 <p className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg animate-fade-in-up delay-200">
-                                    Discover manually verified Exchanges, Wallets, and DeFi protocols.
-                                    <span className="block mt-2">No scams. Just trusted platforms.</span>
+                                    Compare exchanges, wallets, DeFi, AI and Web3 projects with scam analysis, community ratings and expert reviews.
                                 </p>
 
                                 {/* Search Bar - Left Aligned */}
@@ -123,35 +146,20 @@ const Home = () => {
                                     </div>
                                 </div>
 
-                                {/* Trust Metrics */}
-                                <div className="flex flex-wrap items-center gap-4 sm:gap-8 pt-2 sm:pt-4 animate-fade-in-up delay-400">
-                                    <div className="flex -space-x-3 sm:-space-x-4">
-                                        {[
-                                            'https://randomuser.me/api/portraits/women/44.jpg',
-                                            'https://randomuser.me/api/portraits/men/32.jpg',
-                                            'https://randomuser.me/api/portraits/women/68.jpg',
-                                        ].map((src, i) => (
-                                            <img
-                                                key={i}
-                                                src={src}
-                                                alt={`User ${i + 1}`}
-                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white shadow-sm object-cover"
-                                            />
-                                        ))}
-                                        {/* +49K overflow indicator */}
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white flex items-center justify-center shadow-sm">
-                                            <span className="text-[8px] sm:text-[9px] font-black text-white leading-none">+49K</span>
+                                {/* Trust Metrics Checklist */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 pt-4 animate-fade-in-up delay-400 max-w-lg">
+                                    {[
+                                        '327 Verified Projects',
+                                        '12,500 Registered Investors',
+                                        '95 Scam Reports Published',
+                                        '4.8 Average Rating',
+                                        '18 Categories'
+                                    ].map((stat, i) => (
+                                        <div key={i} className="flex items-center gap-2.5 text-gray-700 font-semibold text-sm sm:text-base">
+                                            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 border border-emerald-200 font-extrabold text-[10px]">✓</span>
+                                            <span>{stat}</span>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-gray-900 text-base sm:text-lg">50,000+</p>
-                                        <p className="text-xs sm:text-sm text-gray-500 font-medium">Monthly Users</p>
-                                    </div>
-                                    <div className="w-px h-8 sm:h-10 bg-gray-200 hidden xs:block"></div>
-                                    <div>
-                                        <p className="font-bold text-gray-900 text-base sm:text-lg">500+</p>
-                                        <p className="text-xs sm:text-sm text-gray-500 font-medium">Verified Apps</p>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -192,6 +200,58 @@ const Home = () => {
                         <Link to="/browse" className="md:hidden mt-8 block">
                             <Button variant="outline" className="w-full">View All</Button>
                         </Link>
+                    </div>
+                </section>
+
+                {/* Dynamic Filters Project Showcase Section */}
+                <section className="py-20 bg-slate-50 border-t border-b border-slate-200/60 relative overflow-hidden">
+                    {/* Decorative Background Elements */}
+                    <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+                    <div className="container-custom relative z-10">
+                        <div className="text-center mb-12">
+                            <span className="inline-block px-4 py-1.5 rounded-full bg-white border border-gray-200/80 text-primary font-bold tracking-wider uppercase text-xs mb-3 shadow-sm">Showcase</span>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">Explore Projects By Performance</h2>
+                            <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto font-medium">Quickly browse top projects based on popularity, rating, security, and community warnings.</p>
+                        </div>
+
+                        {/* Tabs list */}
+                        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-10 pb-6 border-b border-gray-200/80">
+                            {[
+                                { id: 'trending', label: 'Trending Today', icon: '🔥' },
+                                { id: 'new', label: 'New Listings', icon: '🚀' },
+                                { id: 'highest_rated', label: 'Highest Rated', icon: '⭐' },
+                                { id: 'most_secure', label: 'Most Secure', icon: '🛡️' },
+                                { id: 'recently_flagged', label: 'Recently Flagged', icon: '⚠️' },
+                                { id: 'editors_choice', label: 'Editor\'s Choice', icon: '👑' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2.5 px-5 py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
+                                        activeTab === tab.id
+                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 scale-105'
+                                            : 'bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
+                                    }`}
+                                >
+                                    <span className="text-base leading-none">{tab.icon}</span>
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Showcase Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getFilteredWebsites().map(website => (
+                                <WebsiteCard key={website.id || website._id} website={website} viewMode="grid" />
+                            ))}
+                            {getFilteredWebsites().length === 0 && (
+                                <div className="col-span-full py-16 text-center bg-white border border-gray-200/80 rounded-3xl p-8 shadow-sm">
+                                    <p className="text-gray-400 font-semibold text-base sm:text-lg">No projects match this filter right now.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </section>
 
