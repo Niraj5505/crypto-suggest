@@ -5,7 +5,7 @@ import { useWallet } from '../../contexts/WalletContext';
 import WalletConnectionModal from './WalletConnectionModal';
 
 const ConnectWalletButton = ({ className = "" }) => {
-    const { isConnected, walletAddress, getTruncatedAddress, disconnectWallet } = useWallet();
+    const { isConnected, walletAddress, getTruncatedAddress, disconnectWallet, user } = useWallet();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -51,7 +51,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                 }`}
             >
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                <span>{getTruncatedAddress()}</span>
+                <span>{user?.username || 'My Account'}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -71,7 +71,7 @@ const ConnectWalletButton = ({ className = "" }) => {
                         <div className="p-4 border-b border-gray-100">
                             <div className="text-xs text-text-muted mb-1">Logged in as</div>
                             <div className="font-bold text-sm text-text-main break-all">
-                                {getTruncatedAddress()}
+                                {user?.email || user?.username}
                             </div>
                         </div>
 
