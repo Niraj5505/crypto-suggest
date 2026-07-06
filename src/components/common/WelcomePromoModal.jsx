@@ -19,9 +19,15 @@ const WelcomePromoModal = () => {
     const [signUpMobile, setSignUpMobile] = useState('');
     const [signUpPassword, setSignUpPassword] = useState('');
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     useEffect(() => {
         // Show only if not connected and hasn't dismissed yet
-        const hasSeenPromo = localStorage.getItem('hasSeenPromo');
+        const hasSeenPromo = localStorage.getItem('hasSeenPromo_v2');
         if (!isConnected && hasSeenPromo !== 'true') {
             const timer = setTimeout(() => {
                 setIsOpen(true);
@@ -30,11 +36,10 @@ const WelcomePromoModal = () => {
         }
     }, [isConnected]);
 
-    if (!isOpen || isConnected) return null;
-    if (typeof document === 'undefined' || !document.body) return null;
+    if (!mounted || !isOpen || isConnected) return null;
 
     const handleClose = () => {
-        localStorage.setItem('hasSeenPromo', 'true');
+        localStorage.setItem('hasSeenPromo_v2', 'true');
         setIsOpen(false);
     };
 
@@ -56,7 +61,7 @@ const WelcomePromoModal = () => {
                 ''
             );
             if (result.success) {
-                localStorage.setItem('hasSeenPromo', 'true');
+                localStorage.setItem('hasSeenPromo_v2', 'true');
                 setIsOpen(false);
                 navigate('/dashboard');
             } else {
