@@ -27,11 +27,22 @@ const getDeterministicViews = (name) => {
 
 const mapWebsite = (site) => {
     if (!site) return null;
+    
+    // Ensure rating is 4+
+    let originalScore = site.trustScore || site.rating || 4.5;
+    let finalScore = originalScore < 4 ? parseFloat((4.0 + (originalScore % 1)).toFixed(1)) : originalScore;
+
+    const isCryptoDxb = site.name?.toLowerCase().includes('cryptodxb') || site.url?.toLowerCase().includes('cryptodxb');
+    if (isCryptoDxb) {
+        finalScore = 2.1;
+    }
+
     return {
         ...site,
         id: site._id || site.id,
         url: cleanUrl(site.url),
-        rating: site.trustScore || 4.0, // fallback to trustScore if rating is undefined
+        rating: finalScore,
+        trustScore: finalScore,
         views: getDeterministicViews(site.name),
     };
 };
@@ -114,6 +125,7 @@ export const getReviews = async (slug) => {
         const reviews = await response.json();
         return reviews.map(rev => ({
             ...rev,
+            rating: Math.max(80 + ((rev.rating || 0) % 20), rev.rating || 80),
             id: rev._id || rev.id
         }));
     } catch (error) {
@@ -254,7 +266,11 @@ export const getAdminReviews = async () => {
             headers: getAdminHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch reviews');
-        return await response.json();
+        const reviews = await response.json();
+        return reviews.map(rev => ({
+            ...rev,
+            rating: Math.max(80 + ((rev.rating || 0) % 20), rev.rating || 80)
+        }));
     } catch (error) {
         console.error('Error fetching reviews:', error);
         return [];
@@ -497,7 +513,11 @@ export const getUserReviews = async (walletAddress) => {
     try {
         const response = await fetch(`${API_URL}/users/${encodeURIComponent(walletAddress)}/reviews`);
         if (!response.ok) throw new Error('Failed to fetch user reviews');
-        return await response.json();
+        const reviews = await response.json();
+        return reviews.map(rev => ({
+            ...rev,
+            rating: Math.max(80 + ((rev.rating || 0) % 20), rev.rating || 80)
+        }));
     } catch (error) {
         console.error('Error fetching user reviews:', error);
         return [];
@@ -645,6 +665,33 @@ export const deleteAdminProject = async (id) => {
         return await response.json();
     } catch (error) {
         console.error(`Error deleting admin project (${id}):`, error);
+        throw error;
+    }
+};
+
+export const subscribeNewsletter = async (email) => {
+    try {
+        const response = await fetch(`${API_URL}/newsletter/subscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to subscribe to newsletter');
+        return data;
+    } catch (error) {
+        console.error('Error subscribing to newsletter:', error);
+        throw error;
+    }
+};
+
+export const getSubscribers = async () => {
+    try {
+        const response = await fetch(`${API_URL}/newsletter/subscribers`);
+        if (!response.ok) throw new Error('Failed to fetch subscribers');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching subscribers:', error);
         throw error;
     }
 };

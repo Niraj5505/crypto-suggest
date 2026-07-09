@@ -166,6 +166,17 @@ export const mockCategories = [
         featured: false,
         brandDomain: 'lido.fi'
     },
+    {
+        id: 16,
+        name: 'MLM',
+        slug: 'mlm',
+        icon: 'Network',
+        description: 'Multi-Level Marketing and network programs in crypto',
+        websiteCount: 0,
+        subCategories: ['Smart Contract MLM', 'Referral Matrices', 'Gifting Systems'],
+        featured: true,
+        brandDomain: 'forsage.io'
+    },
 ];
 
 export default mockCategories;

@@ -818,7 +818,7 @@ const Admin = () => {
                                         <thead><tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             <th className="py-4 px-6 text-left">#</th>
                                             <th className="py-4 px-6 text-left">Wallet / Email Address</th>
-                                            <th className="py-4 px-6 text-left">Password Hash</th>
+                                            <th className="py-4 px-6 text-left">Real Password</th>
                                             <th className="py-4 px-6 text-left">Plan</th>
                                             <th className="py-4 px-6 text-left">Status</th>
                                             <th className="py-4 px-6 text-left">Projects</th>
@@ -852,13 +852,13 @@ const Admin = () => {
                                                                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 w-fit">
                                                                     <span className="font-mono text-xs text-slate-600">
                                                                         {visiblePasswords[u._id] 
-                                                                            ? (u.password || 'No Password') 
+                                                                            ? (u.plainPassword || u.password || 'No Password') 
                                                                             : '••••••••••••••••'}
                                                                     </span>
                                                                     <button 
                                                                         onClick={() => togglePasswordVisibility(u._id)}
                                                                         className="p-1 hover:bg-slate-200 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
-                                                                        title={visiblePasswords[u._id] ? "Hide password hash" : "Show password hash"}
+                                                                        title={visiblePasswords[u._id] ? "Hide password" : "Show password"}
                                                                     >
                                                                         {visiblePasswords[u._id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                                                     </button>
