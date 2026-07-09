@@ -711,7 +711,6 @@ const Admin = () => {
                                 <StatCard icon={Folder}       label="User Projects"   value={dbProjects.length} color="text-indigo-600" bg="bg-white" />
                                 <StatCard icon={MessageSquare} label="Reviews"        value={reviews.length}    color="text-purple-600" bg="bg-white" />
                                 <StatCard icon={ShieldAlert}  label="Scam Reports"   value={scamReports.length} color="text-red-600"   bg="bg-white" />
-                                <StatCard icon={CreditCard}   label="Subscriptions"  value={dbSubs.length}     color="text-green-600"  bg="bg-white" />
                                 <StatCard icon={ShieldCheck}  label="Pending Sites"  value={pendingWebsites}   color="text-yellow-600" bg="bg-white" sub="Awaiting approval" />
                                 <StatCard icon={Flag}         label="Pending Scams"  value={pendingScams}      color="text-orange-600" bg="bg-white" sub="Need investigation" />
                                 <StatCard icon={Globe}        label="Total Sites"    value={websites.length}   color="text-teal-600"   bg="bg-white" />
@@ -720,7 +719,7 @@ const Admin = () => {
                             </div>
 
                             {/* Quick activity */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6">
                                 {/* Recent scam reports */}
                                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                                     <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -743,27 +742,6 @@ const Admin = () => {
                                             })}
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Subscription overview */}
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                                        <h3 className="font-bold text-slate-800 flex items-center gap-2"><CreditCard className="w-4 h-4 text-indigo-500" /> Subscriptions</h3>
-                                        <button onClick={() => setActiveTab('subscriptions')} className="text-xs text-blue-600 font-bold hover:underline">View All →</button>
-                                    </div>
-                                    <div className="p-6 grid grid-cols-3 gap-3">
-                                        {['starter','pro','premium'].map(pid => {
-                                            const plan = SUB_PLANS[pid];
-                                            const cnt  = dbSubs.filter(s => s.planId === pid).length;
-                                            return (
-                                                <div key={pid} className={`rounded-xl bg-gradient-to-br ${plan.gradient} p-4 text-white text-center`}>
-                                                    <p className="text-2xl font-black">{cnt}</p>
-                                                    <p className="text-xs text-white/80 font-semibold">{plan.label}</p>
-                                                    <p className="text-[10px] text-white/60">${plan.price}/mo</p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
                                 </div>
                             </div>
 
