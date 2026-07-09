@@ -10,6 +10,10 @@ const visitorSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    path: {
+        type: String,
+        default: '/'
+    },
     visitedAt: {
         type: Date,
         default: Date.now

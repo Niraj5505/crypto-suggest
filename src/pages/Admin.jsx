@@ -1439,6 +1439,7 @@ const Admin = () => {
                                             <th className="py-4 px-6 text-left">#</th>
                                             <th className="py-4 px-6 text-left">Visitor Hash ID (IP Hash)</th>
                                             <th className="py-4 px-6 text-left">Browser / User Agent</th>
+                                            <th className="py-4 px-6 text-left">Visited Page</th>
                                             <th className="py-4 px-6 text-right">Visited Date & Time</th>
                                         </tr></thead>
                                         <tbody className="divide-y divide-slate-50">
@@ -1450,6 +1451,9 @@ const Admin = () => {
                                                     </td>
                                                     <td className="py-4 px-6 text-xs text-slate-500 max-w-sm truncate" title={v.userAgent}>
                                                         {v.userAgent || 'Unknown Device'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-xs text-indigo-600 font-medium truncate max-w-xs" title={v.path}>
+                                                        {v.path || '/'}
                                                     </td>
                                                     <td className="py-4 px-6 text-right text-xs text-slate-400 font-semibold">
                                                         {new Date(v.visitedAt || v.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

@@ -1004,11 +1004,13 @@ app.post('/api/analytics/hit', async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         const ipHash = crypto.createHash('sha256').update(ip).digest('hex');
         const userAgent = req.headers['user-agent'] || '';
+        const { path } = req.body || {};
 
         // Capture new hit
         const visitor = new Visitor({
             ipHash,
-            userAgent
+            userAgent,
+            path: path || '/'
         });
         await visitor.save();
 
