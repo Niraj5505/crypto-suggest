@@ -227,23 +227,7 @@ const PLANS = [
             { text: 'Priority Support',          included: true },
         ],
     },
-    {
-        id: 'enterprise',
-        name: 'Enterprise',
-        price: 0,
-        period: 'lifetime',
-        gradient: 'from-slate-800 to-slate-950',
-        glow: 'shadow-slate-500',
-        icon: Crown,
-        badge: null,
-        tagline: 'Unlimited Active Projects & Verification',
-        features: [
-            { text: 'Unlimited Active Projects', included: true },
-            { text: 'Homepage Hero & Featured Placement', included: true },
-            { text: 'Lifetime Verification & Auto-Approve', included: true },
-            { text: 'Dedicated Account Support', included: true }
-        ],
-    },
+
 ];
 
 const FAQ = [
@@ -2238,7 +2222,7 @@ const Dashboard = () => {
                                                 <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                                     <th className="py-4 px-6 text-left">Project Name</th>
                                                     <th className="py-4 px-6 text-left">User Details</th>
-                                                    <th className="py-4 px-6 text-left">Wallet Address</th>
+                                                    <th className="py-4 px-6 text-left">Mobile Number</th>
                                                     <th className="py-4 px-6 text-right">Clicked Date</th>
                                                 </tr>
                                             </thead>
@@ -2252,8 +2236,8 @@ const Dashboard = () => {
                                                             <div className="font-semibold text-gray-700">@{lead.leadUsername || 'anonymous'}</div>
                                                             <div className="text-xs text-gray-400 font-medium">{lead.leadEmail || '—'}</div>
                                                         </td>
-                                                        <td className="py-4 px-6 font-mono text-xs text-indigo-600 font-bold select-all cursor-pointer" title="Click to copy" onClick={() => { navigator.clipboard.writeText(lead.leadWalletAddress); alert('Wallet address copied!'); }}>
-                                                            {lead.leadWalletAddress.slice(0, 8)}...{lead.leadWalletAddress.slice(-6)}
+                                                        <td className="py-4 px-6 text-sm text-gray-700 font-semibold">
+                                                            {lead.leadMobile || '—'}
                                                         </td>
                                                         <td className="py-4 px-6 text-right text-xs text-gray-500 font-semibold">
                                                             {new Date(lead.clickedAt || lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
