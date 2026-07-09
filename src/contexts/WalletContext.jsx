@@ -139,6 +139,9 @@ export const WalletProvider = ({ children }) => {
     };
 
     const getTruncatedAddress = () => {
+        if (user && user.email) {
+            return user.email;
+        }
         if (user && user.username) {
             return `@${user.username}`;
         }

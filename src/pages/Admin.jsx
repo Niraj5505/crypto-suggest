@@ -787,7 +787,12 @@ const Admin = () => {
                                                     <tr key={r._id} className="hover:bg-slate-50">
                                                         <td className="py-3 px-6 font-semibold text-slate-800">{r.websiteId}</td>
                                                         <td className="py-3 px-6">⭐ {r.rating}<span className="text-slate-400 text-xs">/100</span></td>
-                                                        <td className="py-3 px-6 font-mono text-xs text-slate-400">{truncateAddr(r.walletAddress)}</td>
+                                                        <td className="py-3 px-6 font-mono text-xs text-slate-400">
+                                                            {(() => {
+                                                                const user = dbUsers.find(u => u.walletAddress === r.walletAddress);
+                                                                return user ? (user.email || user.username) : truncateAddr(r.walletAddress);
+                                                            })()}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -807,7 +812,7 @@ const Admin = () => {
                                     <input
                                         value={searchQ}
                                         onChange={e => setSearchQ(e.target.value)}
-                                        placeholder="Search wallet…"
+                                        placeholder="Search email…"
                                         className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/30 w-52"
                                     />
                                 </div>
@@ -817,7 +822,7 @@ const Admin = () => {
                                     <table className="w-full text-sm">
                                         <thead><tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             <th className="py-4 px-6 text-left">#</th>
-                                            <th className="py-4 px-6 text-left">Wallet / Email Address</th>
+                                            <th className="py-4 px-6 text-left">Email Address</th>
                                             <th className="py-4 px-6 text-left">Real Password</th>
                                             <th className="py-4 px-6 text-left">Plan</th>
                                             <th className="py-4 px-6 text-left">Status</th>
@@ -829,21 +834,21 @@ const Admin = () => {
                                             {dbUsers
                                                 .filter(u => {
                                                     const q = searchQ.toLowerCase();
-                                                    const wMatch = u.walletAddress && u.walletAddress.toLowerCase().includes(q);
                                                     const eMatch = u.email && u.email.toLowerCase().includes(q);
-                                                    return !searchQ || wMatch || eMatch;
+                                                    const wMatch = u.walletAddress && u.walletAddress.toLowerCase().includes(q);
+                                                    return !searchQ || eMatch || wMatch;
                                                 })
                                                 .map((u, i) => {
                                                     const projCount = dbProjects.filter(p => (p.walletAddress && u.walletAddress && p.walletAddress.toLowerCase() === u.walletAddress.toLowerCase()) || (p.email && u.email && p.email.toLowerCase() === u.email.toLowerCase())).length;
                                                     const planMeta  = u.subscribedPlan ? SUB_PLANS[u.subscribedPlan] : null;
-                                                    const displayId = u.walletAddress || u.email || 'Unknown User';
+                                                    const displayId = u.email || u.username || 'Unknown User';
                                                     return (
                                                         <tr key={u._id} className="hover:bg-slate-50 transition-colors">
                                                             <td className="py-4 px-6 text-slate-400 font-bold text-xs">{i + 1}</td>
                                                             <td className="py-4 px-6">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center flex-shrink-0">
-                                                                        <Wallet className="w-4 h-4 text-white" />
+                                                                        <span className="text-white font-bold text-xs uppercase">{displayId.charAt(0)}</span>
                                                                     </div>
                                                                     <span className="font-mono text-xs text-slate-600 font-semibold">{displayId}</span>
                                                                 </div>
@@ -973,7 +978,12 @@ const Admin = () => {
                                                                 'bg-gray-100 text-gray-500 border-gray-200'
                                                             }`}>{proj.status}</span>
                                                         </td>
-                                                        <td className="py-4 px-6 font-mono text-xs text-slate-400">{truncateAddr(proj.walletAddress)}</td>
+                                                        <td className="py-4 px-6 font-mono text-xs text-slate-400">
+                                                            {(() => {
+                                                                const user = dbUsers.find(u => u.walletAddress === proj.walletAddress);
+                                                                return user ? (user.email || user.username) : truncateAddr(proj.walletAddress);
+                                                            })()}
+                                                        </td>
                                                         <td className="py-4 px-6">
                                                             <div className="flex items-center gap-2">
                                                                 {proj.url && <a href={proj.url.startsWith('http') ? proj.url : `https://${proj.url}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700"><Globe className="w-4 h-4" /></a>}
@@ -1033,7 +1043,12 @@ const Admin = () => {
                                                     <td className="py-5 px-6">
                                                         {rev.title && <p className="font-bold text-slate-800 text-sm mb-0.5">{rev.title}</p>}
                                                         <p className="text-xs text-slate-500 max-w-sm line-clamp-2">{rev.text}</p>
-                                                        <p className="font-mono text-[10px] text-slate-400 mt-1">By: {truncateAddr(rev.walletAddress)}</p>
+                                                        <p className="font-mono text-[10px] text-slate-400 mt-1">By: {
+                                                            (() => {
+                                                                const user = dbUsers.find(u => u.walletAddress === rev.walletAddress);
+                                                                return user ? (user.email || user.username) : truncateAddr(rev.walletAddress);
+                                                            })()
+                                                        }</p>
                                                     </td>
                                                     <td className="py-5 px-6 text-center">
                                                         {rev.screenshotUrl
@@ -1087,7 +1102,12 @@ const Admin = () => {
                                                         <tr key={report._id} className="hover:bg-slate-50 transition-colors">
                                                             <td className="py-5 px-6">
                                                                 <p className="font-bold text-slate-800">{report.websiteId}</p>
-                                                                <p className="font-mono text-[10px] text-slate-400 mt-0.5">{truncateAddr(report.walletAddress)}</p>
+                                                                <p className="font-mono text-[10px] text-slate-400 mt-0.5">{
+                                                                    (() => {
+                                                                        const user = dbUsers.find(u => u.walletAddress === report.walletAddress);
+                                                                        return user ? (user.email || user.username) : truncateAddr(report.walletAddress);
+                                                                    })()
+                                                                }</p>
                                                             </td>
                                                             <td className="py-5 px-6">
                                                                 <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-100">{report.scamType}</span>
@@ -1285,7 +1305,7 @@ const Admin = () => {
                                                     <tr key={payment._id} className="hover:bg-slate-50 transition-colors">
                                                         <td className="py-3 px-4">
                                                             <div className="font-bold text-slate-800 text-xs">{payment.username || '—'}</div>
-                                                            <div className="text-[10px] text-slate-400">{payment.email || payment.walletAddress?.slice(0,12)+'...'}</div>
+                                                            <div className="text-[10px] text-slate-400">{payment.email || '—'}</div>
                                                         </td>
                                                         <td className="py-3 px-4">
                                                             <span className={`text-xs font-bold px-2 py-1 rounded-lg text-white bg-gradient-to-r ${
@@ -1319,7 +1339,7 @@ const Admin = () => {
                                                                 <div className="flex items-center justify-end gap-1.5">
                                                                     <button
                                                                         onClick={async () => {
-                                                                            if (!window.confirm(`Approve ${payment.planId} plan for ${payment.username || payment.walletAddress}?`)) return;
+                                                                            if (!window.confirm(`Approve ${payment.planId} plan for ${payment.email || payment.username}?`)) return;
                                                                             try {
                                                                                 await reviewSubPayment(payment._id, 'approve');
                                                                                 showToast('Payment approved & plan activated! ✅');
@@ -1540,15 +1560,15 @@ const Admin = () => {
                                 </div>
 
                                 <div className="p-6 space-y-5">
-                                    {/* Owner Wallet Address */}
+                                    {/* Owner Email Address */}
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Owner Wallet Address <span className="text-red-500">*</span></label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Owner Email Address <span className="text-red-500">*</span></label>
                                         <div className="relative">
                                             <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <input
                                                 value={projectForm.walletAddress}
                                                 onChange={e => setProjectField('walletAddress', e.target.value)}
-                                                placeholder="e.g. 0x1234..."
+                                                placeholder="e.g. user@example.com"
                                                 className={`w-full pl-9 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/30 transition-all ${projectErrors.walletAddress ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
                                             />
                                         </div>

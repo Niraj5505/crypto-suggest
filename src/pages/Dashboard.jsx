@@ -677,7 +677,7 @@ const Dashboard = () => {
         : '--:--';
 
     const activities = [
-        { icon: Shield, color: 'text-blue-600', bg: 'bg-blue-100', title: 'Wallet Connected', desc: `${walletType || 'MetaMask'} — ${getTruncatedAddress()}`, time: connectedTime },
+        { icon: Shield, color: 'text-blue-600', bg: 'bg-blue-100', title: 'Account Connected', desc: `${walletType || 'Credentials'} — ${getTruncatedAddress()}`, time: connectedTime },
         { icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-100', title: 'Review submitted', desc: 'You rated Binance ★★★★★', time: '2h ago' },
         { icon: Bookmark, color: 'text-purple-600', bg: 'bg-purple-100', title: 'Bookmark added', desc: 'Uniswap saved to bookmarks', time: '1d ago' },
         { icon: Eye, color: 'text-green-600', bg: 'bg-green-100', title: 'Site visited', desc: 'Viewed Coinbase exchange details', time: '2d ago' },
@@ -698,7 +698,7 @@ const Dashboard = () => {
                         <div>
                             <div className="flex items-center gap-2 mb-1.5">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs font-bold text-green-600 uppercase tracking-widest">Wallet Active</span>
+                                <span className="text-xs font-bold text-green-600 uppercase tracking-widest">Account Active</span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-black text-gray-900">My Dashboard</h1>
                             <p className="text-gray-500 mt-1 text-sm">Welcome back, <span className="font-semibold text-primary">{displayName}</span> 👋</p>
@@ -2647,29 +2647,6 @@ const Dashboard = () => {
                                                 <Edit3 className="w-4 h-4" /> Edit Profile
                                             </button>
                                         )}
-                                    </div>
-                                </div>
-
-                                {/* Wallet Info */}
-                                <div className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-5 text-white shadow-lg">
-                                    <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-                                    <div className="relative z-10">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <Wallet className="w-5 h-5 text-white/70" />
-                                            <span className="text-[10px] bg-white/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">{walletType || 'MetaMask'}</span>
-                                        </div>
-                                        <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider mb-1">Wallet Address</p>
-                                        <p className="font-mono text-xs font-semibold break-all mb-3 text-white/90">{walletAddress}</p>
-                                        <div className="border-t border-white/20 pt-3 flex items-center justify-between">
-                                            <div>
-                                                <p className="text-white/50 text-[10px] mb-0.5">Connected</p>
-                                                <p className="font-semibold text-sm">{connectedDate}</p>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                                <span className="text-green-300 font-bold text-xs">Active</span>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
