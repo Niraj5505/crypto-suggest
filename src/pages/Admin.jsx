@@ -513,7 +513,6 @@ const Admin = () => {
         { id: 'projects',      label: 'Projects',          icon: Folder,       badge: dbProjects.length || null },
         { id: 'reviews',       label: 'Reviews',           icon: MessageSquare, badge: reviews.length || null },
         { id: 'scams',         label: 'Scam Reports',      icon: ShieldAlert,  badge: pendingScams || null },
-        { id: 'subscriptions', label: 'Subscriptions',     icon: CreditCard,   badge: dbSubs.length || null },
         { id: 'payments',      label: 'Payment Requests',  icon: CheckCircle2, badge: pendingPaymentCount || null },
         { id: 'approvals',     label: 'Site Approvals',    icon: ShieldCheck,  badge: pendingWebsites || null },
         { id: 'visitors',      label: 'Site Visitors',     icon: Eye,          badge: uniqueVisitors || null },
