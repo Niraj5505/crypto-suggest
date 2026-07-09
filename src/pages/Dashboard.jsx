@@ -235,7 +235,7 @@ const PLANS = [
         gradient: 'from-slate-800 to-slate-950',
         glow: 'shadow-slate-500',
         icon: Crown,
-        badge: 'Admin Assigned',
+        badge: null,
         tagline: 'Unlimited Active Projects & Verification',
         features: [
             { text: 'Unlimited Active Projects', included: true },
